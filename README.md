@@ -1,4 +1,4 @@
-# Your startup name here
+# Zoobieville - Social Media
 
 [My Notes](notes.md)
 
