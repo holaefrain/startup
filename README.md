@@ -1,4 +1,4 @@
-# Zoobieville - Social Media
+# Zoobieville
 
 [My Notes](notes.md)
 
