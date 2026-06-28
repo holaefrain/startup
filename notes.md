@@ -13,11 +13,13 @@ This file represents what I have learned about web programming.
 
 ## AWS
 
-Interesting things I have learned about AWS
+EC2:
+Route53:
+Record Keeping:
 
 ## HTML
 
-Interesting things I have learned about HTML
+Structure: proper webpage structure should ALWAYS be thought of before anything else. 
 
 ## React
 
