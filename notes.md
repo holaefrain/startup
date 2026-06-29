@@ -21,6 +21,26 @@ Record Keeping:
 
 Structure: proper webpage structure should ALWAYS be thought of before anything else. 
 
+index.html
+- home + login
+- image/visual
+- big title + catch
+
+scroll
+- elevator pitch
+- stats
+
+scroll
+- how it works
+
+scroll
+- about
+
+scroll
+-sign up
+
+footer
+
 ## React
 
 Interesting things I have learned about React
