@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Home() {
   return (
     <div id="home">
@@ -36,7 +38,7 @@ export default function Home() {
             Log in
           </button>
           <p className="signup-line">
-            Don't have an account? <a href="signup.html">Sign up</a>
+            Don't have an account? <Link to="/signup">Sign up</Link>
           </p>
           <p className="login-message hidden" id="loginMessage"></p>
         </form>

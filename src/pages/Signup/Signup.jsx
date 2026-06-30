@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Signup() {
   return (
     <main id="signup">
@@ -144,7 +146,7 @@ export default function Signup() {
       </section>
 
       <p>
-        <a href="index.html">Back to home</a>
+        <Link to="/">Back to home</Link>
       </p>
     </main>
   );

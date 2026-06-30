@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 export default function Discover() {
   return (
     <div id="discover">
@@ -34,9 +36,9 @@ export default function Discover() {
       <nav className="bottom-nav" aria-label="Primary navigation">
         <ul>
           <li>
-            <a href="discover.html" aria-current="page">
+            <Link to="/discover" aria-current="page">
               Discover
-            </a>
+            </Link>
           </li>
           <li>
             <a href="liked.html">Liked me</a>
