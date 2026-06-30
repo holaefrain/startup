@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
 
 export default function Discover() {
@@ -7,6 +7,7 @@ export default function Discover() {
       <header>
         <h1>Discover</h1>
         <p>Swipe through profiles. Tap the heart or X to like or pass.</p>
+        <AppNav />
       </header>
 
       <main>
@@ -46,25 +47,6 @@ export default function Discover() {
           </button>
         </section>
       </main>
-
-      <nav className="bottom-nav" aria-label="Primary navigation">
-        <ul>
-          <li>
-            <Link to="/discover" aria-current="page">
-              Discover
-            </Link>
-          </li>
-          <li>
-            <Link to="/liked">Liked me</Link>
-          </li>
-          <li>
-            <Link to="/chats">Chats</Link>
-          </li>
-          <li>
-            <Link to="/profile">Profile</Link>
-          </li>
-        </ul>
-      </nav>
 
       <Footer />
     </div>

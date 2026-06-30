@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
+import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
 import homepageImage from "../../../img/homepage.png";
 
 export default function Home() {
   return (
     <div id="home">
+      <AppNav />
       {/* Navigation */}
       <nav id="main-nav">
         <div className="nav-content">
