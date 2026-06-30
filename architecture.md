@@ -1,158 +1,91 @@
-# Debrief HTML - Architecture Overview
+# Debrief Architecture Overview
 
 ## Project Description
 
-This is a web-based implementation of the classic Simon memory game, where players repeat sequences of colored button flashes. The project is built as a multi-page HTML application and serves as a learning exercise for web development fundamentals.
+Debrief is a React single-page dating app concept focused on learning from real date outcomes. Users can discover profiles, sign up, match, chat, propose dates, and eventually submit private post-date debriefs that will feed a compatibility system.
 
-## Technologies Used
+## Current Frontend Structure
 
-### Core Technologies
+The app is bundled with Vite and rendered through React.
 
-- **HTML5** - Semantic markup for structure and content
-- **SVG** - Scalable Vector Graphics for the game's colored button interface
-- **Bash** - Deployment automation script
-
-### HTML Features Utilized
-
-- **Semantic HTML Elements**: `<header>`, `<main>`, `<footer>`, `<nav>`, `<menu>`
-- **Forms**: User authentication interface with input fields
-- **Tables**: Displaying high scores and game button layout
-- **SVG Graphics**: Custom-drawn colored buttons using SVG paths
-- **Meta Tags**: Viewport configuration for responsive behavior
-
-## Code Structure
-
-### Pages
-
-The application consists of four primary HTML pages:
-
-#### 1. **index.html** - Home/Login Page
-
-- Entry point to the application
-- Contains login and registration form
-- Email and password input fields
-- Links to all other pages via navigation menu
-
-#### 2. **signup.html** - Game Interface
-
-- Main game page with interactive Simon buttons
-- Four colored buttons (green, red, blue, yellow) rendered using SVG
-- Score display and reset functionality
-- Real-time notification list showing other players' activities
-- Player name display
-
-#### 3. **discover.html** - High Scores
-
-- Displays leaderboard with top player scores
-- Tabular data showing rank, name, score, and date
-- Sample data includes international player names
-
-#### 4. **settings.html** - About Page
-
-- Game description and rules
-- Educational disclaimer about trademark usage
-- Inspirational quote section
-- Placeholder for random image
-
-### Common Elements
-
-All pages share consistent structure:
-
-**Header**
-
-- Application title: "Simon®"
-- Navigation menu with links to all four pages
-- Horizontal rule separator
-
-**Footer**
-
-- Author attribution
-- GitHub repository link
-- Horizontal rule separator
-
-### File Organization
-
-```
--html/
-├── index.html          # Home/login page
-├── play.html           # Game interface
-├── scores.html         # High scores leaderboard
-├── about.html          # About page with game info
-├── README.md           # Project documentation
-├── notes.md            # Development notes
-├── deployFiles.sh      # Deployment script
-└── LICENSE             # License file
+```text
+index.html
+src/
+├── main.jsx
+├── App.jsx
+├── App.css
+├── index.css
+└── pages/
+    ├── Home/
+    │   └── Home.jsx
+    ├── Signup/
+    │   └── Signup.jsx
+    └── Discover/
+        └── Discover.jsx
 ```
 
-## Design Patterns
+## Routing
 
-### Multi-Page Application (MPA)
+React Router handles navigation inside `src/App.jsx`.
 
-The application uses a traditional multi-page architecture where each page is a separate HTML document. Navigation between pages uses standard HTML anchor tags (`<a>`).
+- `/` renders the Home page.
+- `/signup` renders the Signup page.
+- `/discover` renders the Discover page.
+- `/liked`, `/chats`, and `/profile` currently render placeholder pages for future features.
 
-### Semantic HTML
+## Pages
 
-The codebase emphasizes semantic HTML5 elements to provide meaningful structure:
+### Home
 
-- `<menu>` for navigation lists (semantic alternative to `<ul>`)
-- `<main>` for primary content
-- `<header>` and `<footer>` for page sections
+`src/pages/Home/Home.jsx` contains the landing page, login placeholder dialog, product messaging, and a real image element for the Debrief design concept.
 
-### Static Content
+### Signup
 
-Currently, all content is static HTML with hardcoded data. Notable static features:
+`src/pages/Signup/Signup.jsx` contains semantic registration forms. It uses `fieldset`, `legend`, `label`, `input`, and `select` elements to organize basic information, identity selections, and additional profile details.
 
-- Sample high scores in scores.html
-- Hardcoded notification list in play.html
-- No external CSS or JavaScript files (pure HTML)
+### Discover
 
-## SVG Button Design
+`src/pages/Discover/Discover.jsx` contains a profile card placeholder, like/dislike controls, app navigation, a future Google Maps venue placeholder, a future database profile placeholder, and a future WebSocket notifications placeholder.
 
-The game interface uses inline SVG to create four distinctive colored buttons:
+## Planned Data Flow
 
-- **Green Button** (top-left): Quadratic curve from top-right
-- **Red Button** (top-right): Quadratic curve from top-left
-- **Blue Button** (bottom-left): Quadratic curve from bottom-right
-- **Yellow Button** (bottom-right): Quadratic curve from bottom-left
+```mermaid
+sequenceDiagram
+    actor UserA
+    actor UserB
+    participant React as React Frontend
+    participant API as Node/Express API
+    participant DB as MongoDB
+    participant Maps as Google Maps API
+    participant WS as WebSocket Server
 
-Each button is created using SVG `<path>` elements with quadratic curves (Q command) to create rounded corners.
-
-## Deployment
-
-The project includes a deployment script (`deployFiles.sh`) that:
-
-1. Accepts parameters for SSH key, hostname, and service name
-2. Clears previous deployment on the target server
-3. Copies all files to the remote server via SCP
-4. Deploys to an Ubuntu server in a services directory structure
-
-**Usage:**
-
-```bash
-./deployFiles.sh -k <pem-key-file> -h <hostname> -s <service-name>
+    UserA->>React: Swipe right on UserB
+    React->>API: POST /api/like
+    API->>DB: Store like
+    UserB->>React: Swipe right on UserA
+    React->>API: POST /api/like
+    API->>DB: Create match
+    API->>WS: Send match notification
+    WS->>React: Display new match notification
+    UserA->>React: Request date ideas
+    React->>API: GET /api/venues
+    API->>Maps: Request nearby venues
+    Maps->>API: Return venue list
+    API->>React: Display date ideas
 ```
+
+## Future Backend
+
+The backend is planned as a Node/Express service with:
+
+- REST endpoints for profiles, likes, matches, date proposals, and debrief submissions.
+- MongoDB storage for users, profiles, matches, messages, proposals, and coach-reviewed debriefs.
+- Authentication with hashed credentials.
+- WebSocket support for live chat, match notifications, and date proposal updates.
+- Server-side Google Maps API calls for venue suggestions.
 
 ## Current Limitations
 
-As an HTML-only deliverable, the application has several limitations:
-
-- **No Styling**: No CSS, relying on old-style HTML formatting (`<hr>`, `<br>`)
-- **No Interactivity**: No JavaScript, buttons are non-functional
-- **No Backend**: No server-side logic or data persistence
-- **Static Data**: All scores and notifications are hardcoded
-
-## Future Enhancements
-
-Based on the README, future iterations will add:
-
-- **CSS**: Styling, color schemes, and responsive design
-- **JavaScript**: Game logic, button interactions, and dynamic content
-- **Backend Services**: Node.js/Express server for data persistence
-- **Database**: Store user accounts and high scores
-- **WebSocket**: Real-time multiplayer notifications
-- **Authentication**: Working login/registration system
-- **React**: Modern frontend framework integration
-
-## HTML Element Critique
-
-This section analyzes the HTML elements used throughout the codebase, highlighting strengths, weaknesses, and suggesting improvements.
+- Login, database records, WebSocket notifications, and third-party venue data are represented by placeholders.
+- Liked me, Chats, and Profile are route placeholders.
+- Styling is still minimal and will be expanded in the CSS deliverable.

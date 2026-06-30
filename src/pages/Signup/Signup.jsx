@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
+import Footer from "../../components/Footer.jsx";
 
 export default function Signup() {
   return (
-    <main id="signup">
+    <div id="signup">
+      <main>
       <h1>Sign up</h1>
 
       {/* Step 1: Basic information */}
@@ -148,6 +150,9 @@ export default function Signup() {
       <p>
         <Link to="/">Back to home</Link>
       </p>
-    </main>
+      </main>
+
+      <Footer />
+    </div>
   );
 }

@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import Footer from "../../components/Footer.jsx";
+import homepageImage from "../../../img/homepage.png";
 
 export default function Home() {
   return (
@@ -47,7 +49,7 @@ export default function Home() {
       {/* Hero Section */}
       <section id="hero-section">
         <div className="hero-content">
-          {/* image content */}
+          <img src={homepageImage} alt="Debrief app home screen concept" className="hero-image" />
 
           {/* title */}
           <div className="hero-title">
@@ -82,6 +84,8 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }
