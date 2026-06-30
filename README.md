@@ -111,15 +111,15 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **HTML pages** - I created React pages for Home, Signup, and Discover, with placeholder routes for Liked me, Chats, and Profile.
-- [x] **Proper HTML element usage** - The pages use semantic structure such as `nav`, `main`, `section`, `article`, `form`, `fieldset`, `legend`, `label`, and headings.
-- [x] **Links** - React Router links connect Home, Signup, Discover, Liked me, Chats, and Profile routes.
-- [x] **Text** - The pages include product copy for Debrief, profile placeholder text, form labels, and navigation text.
-- [x] **3rd party API placeholder** - The Discover page includes a Google Maps venue suggestions placeholder for future date ideas.
-- [x] **Images** - The Home page includes an actual image element using the Debrief design image.
-- [x] **Login placeholder** - The Home page includes a login dialog placeholder with email and password fields.
-- [x] **DB data placeholder** - The Discover page includes a profile card placeholder for future MongoDB profile records.
-- [x] **WebSocket placeholder** - The Discover page includes a notifications section for future live match, chat, and date proposal updates.
+- [x] **HTML pages** - I did complete this part of the deliverable.
+- [x] **Proper HTML element usage** - I did complete this part of the deliverable.
+- [x] **Links** - I did complete this part of the deliverable.
+- [x] **Text** - I did complete this part of the deliverable.
+- [x] **3rd party API placeholder** - I did complete this part of the deliverable.
+- [x] **Images** - I did complete this part of the deliverable.
+- [x] **Login placeholder** - I did complete this part of the deliverable.
+- [x] **DB data placeholder** - I did complete this part of the deliverable.
+- [x] **WebSocket placeholder** - I did complete this part of the deliverable.
 
 ## 🚀 CSS deliverable
 
