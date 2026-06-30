@@ -23,6 +23,8 @@ The Debrief experience flows across four core screens.
 
 ```mermaid
 sequenceDiagram
+    actor UserA
+    actor UserB
     actor UserA as User A
     actor UserB as User B
     participant Frontend as React Frontend
