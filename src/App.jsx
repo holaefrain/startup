@@ -1,6 +1,7 @@
 import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home/Home.jsx";
 import Signup from "./pages/Signup/Signup.jsx";
+import Identity from "./pages/Signup/Identity.jsx";
 import Discover from "./pages/Discover/Discover.jsx";
 import Chat from "./pages/Chat/Chat.jsx";
 import Profile from "./pages/Profile/Profile.jsx";
@@ -27,6 +28,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/signup/identity" element={<Identity />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/profile" element={<Profile />} />
