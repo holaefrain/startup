@@ -60,3 +60,9 @@ export default function Identity() {
           <button type="submit">Next</button>
         </form>
       </section>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}

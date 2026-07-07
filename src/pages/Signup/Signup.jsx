@@ -45,7 +45,7 @@ export default function Signup() {
           <fieldset>
             <legend>Step 1 - Basic information</legend>
 
-            <label htmlFor="first_name">First name</label> //htmlFor since for is for JS
+            <label htmlFor="first_name">First name</label>
             <input
               id="first_name"
               name="first_name"

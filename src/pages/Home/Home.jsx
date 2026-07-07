@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
+import homepage1 from "../../assets/img/homepage1.jpg";
+import homepage2 from "../../assets/img/homepage2.jpg";
+import homepage3 from "../../assets/img/homepage3.jpeg";
 import "./Home.css";
 
 export default function Home() {
@@ -79,10 +82,16 @@ export default function Home() {
       {/* Hero Section */}
       <section id="hero-section">
         <div className="hero-content">
-          <div className="hero-photo-grid" aria-label="Couples enjoying dates">
-            <div className="hero-photo hero-photo-sunset" role="img" aria-label="Couple dancing near the water at sunset"></div>
-            <div className="hero-photo hero-photo-field" role="img" aria-label="Couple hugging in a flower field"></div>
-            <div className="hero-photo hero-photo-dance" role="img" aria-label="Couple spinning while dancing outdoors"></div>
+          <div className="hero-photo-grid" aria-label="Homepage preview images">
+            <figure className="hero-photo">
+              <img src={homepage1} alt="Homepage preview 1" />
+            </figure>
+            <figure className="hero-photo">
+              <img src={homepage2} alt="Homepage preview 2" />
+            </figure>
+            <figure className="hero-photo">
+              <img src={homepage3} alt="Homepage preview 3" />
+            </figure>
           </div>
 
           {/* title */}

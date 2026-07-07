@@ -46,6 +46,12 @@ sign up.html
 
 ## CSS
 
+## JS
+
+## JSX
+-  Note on [PARSE_ERROR] Unexpected token:
+    - 
+
 ## React
 
 *Routing*
