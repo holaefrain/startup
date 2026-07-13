@@ -213,6 +213,16 @@ form button,
   background: var(--color-surface);
 }
 
+.photo-preview {
+  display: block;
+  width: 8rem;
+  height: 8rem;
+  margin-top: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  object-fit: cover;
+}
+
 .photo-placeholder {
   display: grid;
   min-height: 18rem;

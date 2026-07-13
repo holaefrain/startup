@@ -7,6 +7,7 @@ export default function Signup() {
   const [formData, setFormData] = useState({ //controlled form state
     first_name: "",
     last_name: "",
+    birthday: "",
     email: "",
     phone: "",
     password: "",
@@ -32,6 +33,10 @@ export default function Signup() {
     } catch (error) {
       console.error("Signup request failed", error);
     }
+
+    // Persisted so later signup steps can compute age/zodiac sign
+    // without a backend round trip.
+    localStorage.setItem("birthday", formData.birthday);
 
     navigate("/signup/identity");
   };

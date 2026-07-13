@@ -36,7 +36,7 @@ export default function BasicInfo() {
       console.error("Basic info request failed", error);
     }
 
-    navigate("/discover");
+    navigate("/signup/more-info");
   };
 
   return (
@@ -179,7 +179,7 @@ export default function BasicInfo() {
               <option value="prefer_not">Prefer not to say</option>
             </select>
 
-            <button type="submit">Finish</button>
+            <button type="submit">Next</button>
           </fieldset>
         </form>
       </main>

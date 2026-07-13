@@ -3,6 +3,8 @@ import Home from "./pages/Home/Home.jsx";
 import Signup from "./pages/Signup/Signup.jsx";
 import Identity from "./pages/Signup/Identity.jsx";
 import BasicInfo from "./pages/Signup/BasicInfo.jsx";
+import MoreInfo from "./pages/Signup/MoreInfo.jsx";
+import Photos from "./pages/Signup/Photos.jsx";
 import Discover from "./pages/Discover/Discover.jsx";
 import Chat from "./pages/Chat/Chat.jsx";
 import Profile from "./pages/Profile/Profile.jsx";
@@ -31,6 +33,8 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/signup/identity" element={<Identity />} />
         <Route path="/signup/basic-info" element={<BasicInfo />} />
+        <Route path="/signup/more-info" element={<MoreInfo />} />
+        <Route path="/signup/photos" element={<Photos />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/profile" element={<Profile />} />
