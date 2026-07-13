@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer.jsx";
 
 const PHOTO_COUNT = 8;
+const MIN_PHOTOS = 3;
 
 export default function Photos() {
   const navigate = useNavigate();
@@ -28,8 +29,9 @@ export default function Photos() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (photos.some((file) => !file)) {
-      setError("Please upload all 8 photos before continuing.");
+    const uploadedCount = photos.filter((file) => file).length;
+    if (uploadedCount < MIN_PHOTOS) {
+      setError(`Please upload at least ${MIN_PHOTOS} photos before continuing.`);
       return;
     }
     setError("");
@@ -38,7 +40,7 @@ export default function Photos() {
     // instead of the JSON body used by the earlier signup steps.
     const body = new FormData();
     photos.forEach((file, index) => {
-      body.append(`photo_${index + 1}`, file);
+      if (file) body.append(`photo_${index + 1}`, file);
     });
 
     // TODO: update the endpoint to match your backend API.
@@ -64,7 +66,7 @@ export default function Photos() {
         <form id="signup-step5" onSubmit={handleSubmit}>
           <fieldset>
             <legend>Step 5 - Photos</legend>
-            <p>Add 8 photos for your profile.</p>
+            <p>Add up to 8 photos for your profile ({MIN_PHOTOS} minimum).</p>
 
             {photos.map((_, index) => (
               <div key={index}>
