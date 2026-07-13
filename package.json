@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "server": "node --env-file=.env server/index.js",
     "test:s3": "node --env-file=.env server/testS3Connection.js",
+    "test:db": "node server/testDbConnection.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -28,6 +29,7 @@
     "@aws-sdk/credential-providers": "^3.1081.0",
     "@tailwindcss/vite": "^4.3.2",
     "express": "^5.2.1",
+    "mongodb": "^7.5.0",
     "multer": "^2.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
