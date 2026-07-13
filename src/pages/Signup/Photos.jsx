@@ -37,22 +37,28 @@ export default function Photos() {
     setError("");
 
     // Files can't be JSON-encoded, so this step posts multipart form data
-    // instead of the JSON body used by the earlier signup steps.
+    // instead of the JSON body used by the earlier signup steps. All files
+    // share one field name ("photos") to match multer.array() on the server.
     const body = new FormData();
-    photos.forEach((file, index) => {
-      if (file) body.append(`photo_${index + 1}`, file);
+    photos.forEach((file) => {
+      if (file) body.append("photos", file);
     });
 
-    // TODO: update the endpoint to match your backend API.
-    // The server should store these photos (e.g. in object storage) and
-    // attach the resulting URLs to the signed-up user's profile.
     try {
-      await fetch("/api/signup/photos", {
+      const response = await fetch("/api/signup/photos", {
         method: "POST",
         body,
       });
+
+      if (!response.ok) {
+        const { error: message } = await response.json();
+        setError(message || "Photo upload failed. Please try again.");
+        return;
+      }
     } catch (error) {
       console.error("Photo upload failed", error);
+      setError("Photo upload failed. Please try again.");
+      return;
     }
 
     navigate("/discover");

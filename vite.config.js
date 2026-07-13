@@ -4,4 +4,9 @@ const tailwindcss = require("@tailwindcss/vite").default;
 
 module.exports = defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      "/api": "http://localhost:3000",
+    },
+  },
 });
