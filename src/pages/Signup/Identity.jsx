@@ -1,7 +1,14 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Footer from "../../components/Footer.jsx";
 
 export default function Identity() {
+  const navigate = useNavigate();
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    navigate("/signup/basic-info");
+  };
+
   return (
     <div id="identity">
       <main>
@@ -9,9 +16,8 @@ export default function Identity() {
 
         <section id="identity-step">
         <h2>Step 2 - Identity</h2>
-        <p>(Shown after submitting basic information)</p>
 
-        <form id="signup-step2" action="/signup-complete" method="post">
+        <form id="signup-step2" onSubmit={handleSubmit}>
           <label htmlFor="pronouns">Pronouns</label>
           <select id="pronouns" name="pronouns" required>
             <option value="">Select pronouns</option>

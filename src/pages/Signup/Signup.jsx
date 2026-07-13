@@ -65,6 +65,16 @@ export default function Signup() {
               required
             />
 
+            <label htmlFor="birthday">Birthday</label>
+            <input
+              id="birthday"
+              name="birthday"
+              type="date"
+              value={formData.birthday}
+              onChange={handleChange}
+              required
+            />
+
             <label htmlFor="email">Email</label>
             <input
               id="email"
