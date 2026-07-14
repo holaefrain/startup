@@ -5,8 +5,9 @@ import AccountStep from "./steps/AccountStep.jsx";
 import IdentityStep from "./steps/IdentityStep.jsx";
 import BasicInfoStep from "./steps/BasicInfoStep.jsx";
 import MoreInfoStep from "./steps/MoreInfoStep.jsx";
-import PhotosStep, { MIN_PHOTOS } from "./steps/PhotosStep.jsx";
+import PhotosStep from "./steps/PhotosStep.jsx";
 import { getAge, getZodiacSign } from "./dateUtils.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const TOTAL_STEPS = 5;
 const PHOTO_COUNT = 8;
@@ -41,6 +42,7 @@ const INITIAL_FORM_DATA = {
 
 export default function Signup() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [photos, setPhotos] = useState(Array(PHOTO_COUNT).fill(null));
@@ -92,16 +94,10 @@ export default function Signup() {
       return;
     }
 
-    const uploadedCount = photos.filter((file) => file).length;
-    if (uploadedCount < MIN_PHOTOS) {
-      setError(`Please upload at least ${MIN_PHOTOS} photos before continuing.`);
-      return;
-    }
-
     // multipart/form-data so the photo files and every other field can go
-    // in one request. `password` is deliberately never sent - hashing and
-    // storing credentials belongs to the auth/Service deliverable, not
-    // this step (see server/userSchema.js).
+    // in one request. `password` goes to POST /api/auth separately (below,
+    // once this profile exists) rather than here - hashing/token issuance
+    // is server/auth.js's concern, not this endpoint's.
     const body = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
       if (key === "password" || !value) return;
@@ -122,6 +118,20 @@ export default function Signup() {
         setSubmitting(false);
         return;
       }
+
+      const authResponse = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, password: formData.password }),
+      });
+      if (!authResponse.ok) {
+        setError("Signup failed. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+
+      const { email: registeredEmail } = await authResponse.json();
+      login(registeredEmail);
     } catch (err) {
       console.error("Signup request failed", err);
       setError("Signup failed. Please try again.");

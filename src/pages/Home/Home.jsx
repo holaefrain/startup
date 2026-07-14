@@ -1,14 +1,18 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 import homepage1 from "../../assets/img/homepage1.jpg";
 import homepage2 from "../../assets/img/homepage2.jpg";
 import homepage3 from "../../assets/img/homepage3.jpeg";
 import "./Home.css";
 
 export default function Home() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   function openLogin() {
     setIsLoginOpen(true);
@@ -18,8 +22,25 @@ export default function Home() {
     setIsLoginOpen(false);
   }
 
-  function handleLoginSubmit(event) {
+  async function handleLoginSubmit(event) {
     event.preventDefault();
+    setLoginError("");
+
+    const { email, password } = event.target;
+    const response = await fetch("/api/auth", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.value, password: password.value }),
+    });
+
+    if (!response.ok) {
+      setLoginError("Incorrect email or password.");
+      return;
+    }
+
+    const { email: loggedInEmail } = await response.json();
+    login(loggedInEmail);
+    navigate("/discover");
   }
 
   return (
@@ -75,7 +96,9 @@ export default function Home() {
           <p className="signup-line">
             Don't have an account? <Link to="/signup">Sign up</Link>
           </p>
-          <p className="login-message hidden" id="loginMessage"></p>
+          <p className={`login-message${loginError ? "" : " hidden"}`} id="loginMessage" role="alert">
+            {loginError}
+          </p>
         </form>
       </div>
 

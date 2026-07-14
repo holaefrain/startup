@@ -12,12 +12,14 @@
 //   family_plans, pets, age, zodiac_sign,
 //   photoKeys: [String],
 //   createdAt: Date,
+//   password: String,  // bcrypt hash, set by POST /api/auth (server/auth.js)
+//   token: String,     // current session token, set by POST/PUT /api/auth
 // }
 //
-// `password` is intentionally NOT in USER_FIELDS and never persisted here.
-// Storing it plaintext would be a real vulnerability, and hashing it
-// properly (bcrypt) belongs to the auth/Service deliverable, not this step
-// - the client doesn't even send it to this endpoint.
+// `password` and `token` are intentionally NOT in USER_FIELDS - they're
+// written directly by server/auth.js, not through this endpoint's
+// client-controlled body, so a signup request can never smuggle in a
+// pre-hashed password or hijack a session token.
 
 const USER_FIELDS = [
   "first_name",
