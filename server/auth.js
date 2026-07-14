@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
 const { getDb } = require("./dbClient");
+const { getAuthenticatedUser } = require("./authHelpers");
 
 // Credentials live on the same `users` document the signup wizard creates
 // (matched by email) rather than a separate collection, so a profile
@@ -72,8 +73,7 @@ router.delete("/auth", async (req, res) => {
 });
 
 router.get("/user/me", async (req, res) => {
-  const token = req.cookies?.token;
-  const user = token && (await (await getDb()).collection("users").findOne({ token }));
+  const user = await getAuthenticatedUser(req);
   if (!user) {
     res.status(401).json({ msg: "Unauthorized" });
     return;

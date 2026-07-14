@@ -8,6 +8,7 @@ const { s3Client, bucketName } = require("./s3Client");
 const { getDb } = require("./dbClient");
 const { USER_FIELDS, pickFields } = require("./userSchema");
 const authRouter = require("./auth");
+const discoverRouter = require("./discover");
 
 const MAX_PHOTOS = 8;
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8MB per photo
@@ -30,6 +31,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api", authRouter);
+app.use("/api", discoverRouter);
 
 // Single signup endpoint: the wizard collects all 5 steps in one component
 // and submits once at the end, so this does one insert rather than
