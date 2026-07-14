@@ -70,10 +70,27 @@ app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => 
   res.status(201).json({ userId: userId.toString() });
 });
 
+// Sibling to server/, not inside it: matches how dbClient.js already
+// resolves dbConfig.json one level up. Locally this directory doesn't
+// exist (Vite serves the frontend instead), so this is a no-op in dev -
+// it only does anything once a production deploy places a built React
+// bundle here (see deployReact.sh).
+const PUBLIC_DIR = path.join(__dirname, "..", "public");
+app.use(express.static(PUBLIC_DIR));
+
 app.use((error, req, res, next) => {
   console.error(error);
   const status = error.status || (error instanceof multer.MulterError ? 400 : 500);
   res.status(status).json({ error: error.message || "Something went wrong." });
+});
+
+// React Router client-side routes (e.g. /discover) aren't real files, so
+// any GET that didn't match an API route or a static asset falls back to
+// the SPA shell and lets the frontend router take it from there.
+app.use((req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, "index.html"), (error) => {
+    if (error) res.status(404).end();
+  });
 });
 
 const PORT = process.env.PORT || 3000;
