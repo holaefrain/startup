@@ -64,3 +64,10 @@ sign up.html
 
 *Routing*
 - With a single page application, the browser only loads one HTML page and then JavaScript is used to manipulate the DOM and give it the appearance of multiple pages. The router defines the routes a user can take through the application, and automatically manipulates the DOM to display the appropriate framework components.
+
+## Chat (planned, currently mocked with local state)
+
+- Match list should look like Hinge: each match shows their photo, name, and a preview of the last message - whether it was sent by me or by them.
+- Clicking a match opens the full conversation thread.
+- Inside a thread, a "Plan a date" button opens date planning, which calls the Google Maps API server-side for venue suggestions (this part is a normal REST call, not WebSocket).
+- Real backend needed: WebSocket for delivering new messages and date-proposal updates live, plus REST endpoints for match list / thread history / sending a message. See architecture.md for the fuller plan.

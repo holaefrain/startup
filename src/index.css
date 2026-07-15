@@ -249,6 +249,259 @@ form button,
   font-size: 0.95rem;
 }
 
+.match-list h3 {
+  margin: 1.25rem 0 0.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.95rem;
+}
+
+.match-list h3:first-of-type {
+  margin-top: 0.5rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+.match-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.match-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  min-height: auto;
+  padding: 0.75rem 0.25rem;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  font-weight: 400;
+}
+
+.match-row:hover {
+  background: var(--color-page);
+  border-color: var(--color-border);
+}
+
+.match-photo-placeholder {
+  width: 3.5rem;
+  height: 3.5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e9e9e9;
+}
+
+.match-info {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.match-name {
+  font-weight: 800;
+}
+
+.match-preview {
+  overflow: hidden;
+  color: var(--color-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.conversation-header h2 {
+  flex: 1;
+  min-width: 0;
+}
+
+.message-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.message {
+  max-width: 75%;
+  padding: 0.6rem 0.9rem;
+  border-radius: 1rem;
+}
+
+.message-me {
+  align-self: flex-end;
+  border-bottom-right-radius: 0.25rem;
+  background: var(--color-accent);
+  color: var(--color-surface);
+}
+
+.message-match {
+  align-self: flex-start;
+  border-bottom-left-radius: 0.25rem;
+  background: var(--color-page);
+  border: 1px solid var(--color-border);
+}
+
+.message-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.message-form label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.message-form input {
+  flex: 1;
+}
+
+.profile-preview,
+.date-planner {
+  display: grid;
+  gap: 0.4rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+}
+
+.profile-preview .photo-placeholder {
+  min-height: 12rem;
+}
+
+.profile-header {
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.profile-photo-wrap {
+  position: relative;
+  width: 8rem;
+  height: 8rem;
+}
+
+.profile-photo-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-accent);
+  background: #e9e9e9;
+}
+
+.profile-photo-edit {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.profile-name {
+  margin-top: 0.5rem;
+}
+
+.profile-email {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.profile-field-group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-field-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.profile-field-row:last-child {
+  border-bottom: none;
+}
+
+.profile-field-main {
+  display: grid;
+  flex: 1;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  text-align: left;
+  font-weight: 400;
+}
+
+.profile-field-label {
+  font-weight: 800;
+}
+
+.profile-field-value {
+  overflow: hidden;
+  color: var(--color-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-field-main input {
+  min-height: auto;
+  padding: 0.35rem 0.5rem;
+}
+
+.profile-field-visibility {
+  flex-shrink: 0;
+  min-height: auto;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.profile-field-visibility:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.profile-field-visibility:not(:disabled):hover {
+  background: var(--color-accent-strong);
+  color: var(--color-surface);
+}
+
 @media (max-width: 640px) {
   main,
   header,

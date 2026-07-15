@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
+import placeholderPhoto from "../../assets/img/1920x1080.png";
 
 export default function Discover() {
   const [profiles, setProfiles] = useState(null);
@@ -39,7 +40,11 @@ export default function Discover() {
           {profile && (
             <article className="profile-card" data-profile-id={profile.id}>
               <div className="profile-photos">
-                <div className="photo-placeholder">Photo</div>
+                <img
+                  className="photo-placeholder"
+                  src={placeholderPhoto}
+                  alt={`${profile.first_name} ${profile.last_name}`}
+                />
               </div>
 
               <div className="profile-meta">
