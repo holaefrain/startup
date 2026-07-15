@@ -60,7 +60,7 @@ sign up.html
 ## React
 *Deploy to Production*
 - Build the app (npm run build)
-- Push to Production (./deployReact.sh -k ~/keys/production.pem -h debrief.works -s startup)
+- Push to Production (./deployReact.sh -k ~/keys/production.pem -h startup.debrief.works -s startup)
 
 *Routing*
 - With a single page application, the browser only loads one HTML page and then JavaScript is used to manipulate the DOM and give it the appearance of multiple pages. The router defines the routes a user can take through the application, and automatically manipulates the DOM to display the appropriate framework components.
