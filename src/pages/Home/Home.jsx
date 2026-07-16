@@ -3,9 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
-import homepage1 from "../../assets/img/homepage1.jpg";
-import homepage2 from "../../assets/img/homepage2.jpg";
-import homepage3 from "../../assets/img/homepage3.jpeg";
+import sections from "./sections/index.js";
 import "./Home.css";
 
 export default function Home() {
@@ -102,54 +100,9 @@ export default function Home() {
         </form>
       </div>
 
-      {/* Hero Section */}
-      <section id="hero-section">
-        <div className="hero-content">
-          <div className="hero-photo-grid" aria-label="Homepage preview images">
-            <figure className="hero-photo">
-              <img src={homepage1} alt="Homepage preview 1" />
-            </figure>
-            <figure className="hero-photo">
-              <img src={homepage2} alt="Homepage preview 2" />
-            </figure>
-            <figure className="hero-photo">
-              <img src={homepage3} alt="Homepage preview 3" />
-            </figure>
-          </div>
-
-          {/* title */}
-          <div className="hero-title">
-            <h1>DEBRIEF</h1>
-          </div>
-          {/* subtitle */}
-          <div className="hero-subtitle">
-            <h2>A DATING APP MEANT FOR DATING</h2>
-          </div>
-        </div>
-      </section>
-
-      {/* Elevator Pitch */}
-      <section id="elevator-pitch">
-        <div className="elevator-pitch-content">
-          <h2>Why Debrief?</h2>
-          <p>
-            Debrief is different from other dating apps because we focus on creating a space for honest
-            conversation and personal growth. Instead of just matching people based on superficial criteria,
-            we encourage users to share their real experiences and learn from each other.
-          </p>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works">
-        <div className="how-it-works-content">
-          <h2>How It Works</h2>
-          <p>
-            Debrief makes it easy to connect with others who share similar dating experiences. Our platform
-            allows you to share your stories, ask questions, and get advice from a community of like-minded individuals.
-          </p>
-        </div>
-      </section>
+      {sections.map((Section, index) => (
+        <Section key={index} />
+      ))}
 
       <Footer />
     </div>
