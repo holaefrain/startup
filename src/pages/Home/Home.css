@@ -8,6 +8,15 @@
   display: none;
 }
 
+/* Hidden CSS-side before useScrollReveal/Hero's mount animation ever runs,
+   so there's nothing to flash regardless of JS load timing. */
+[data-reveal],
+.hero-photo,
+.hero-title h1,
+.hero-subtitle h2 {
+  opacity: 0;
+}
+
 #main-nav {
   width: min(100%, 1710px);
   margin: 0 auto;
