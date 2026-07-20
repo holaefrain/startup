@@ -37,12 +37,20 @@ app.use(cookieParser());
 app.use("/api", authRouter);
 app.use("/api", discoverRouter);
 
-// Single signup endpoint: the wizard collects all 5 steps in one component
-// and submits once at the end, so this does one insert rather than
-// creating a document in step 1 and patching it across separate requests.
+// Single signup endpoint: the wizard collects all 5 steps in one component and submits once at the end, so this does one insert rather than creating a document in step 1 and patching it across separate requests.
 app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => {
-  // Generated up front so the same id is both the Mongo _id and the S3 key
-  // prefix for this user's photos.
+  const fields = pickFields(req.body, USER_FIELDS);
+  const db = await getDb();
+  const users = db.collection("users");
+
+  // Read-only check, purely for a faster/clearer error - never mutates another identity's data based on an unauthenticated email match (that was the account-takeover bug in an earlier version of this handler: silently reusing and overwriting a stranger's in-progress profile, including deleting their S3 photos, with no proof of ownership). A genuinely fresh ObjectId/insert below is what actually keeps this safe.
+  const existing = await users.findOne({ email: fields.email });
+  if (existing?.password) {
+    res.status(409).json({ error: "An account with this email already exists. Please log in instead." });
+    return;
+  }
+
+  // Generated up front so the same id is both the Mongo _id and the S3 key prefix for this user's photos. Always fresh, never reused from an existing doc - an abandoned bare (no-password) profile from an earlier interrupted attempt is left alone rather than overwritten, and instead ages out on its own via the TTL index on createdAt (see the index setup script/notes).
   const userId = new ObjectId();
 
   const photoKeys = await Promise.all(
@@ -62,23 +70,21 @@ app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => 
     })
   );
 
-  const fields = pickFields(req.body, USER_FIELDS);
-  const db = await getDb();
-  await db.collection("users").insertOne({
-    _id: userId,
-    ...fields,
-    photoKeys,
-    createdAt: new Date(),
-  });
+  try {
+    await users.insertOne({ _id: userId, ...fields, photoKeys, registered: false, createdAt: new Date() });
+  } catch (err) {
+    // The email_unique_registered index can only ever conflict here if `fields` somehow carried a password through pickFields, which USER_FIELDS excludes by design - this is defense-in-depth, not the primary guard (the findOne check above is).
+    if (err.code === 11000) {
+      res.status(409).json({ error: "An account with this email already exists. Please log in instead." });
+      return;
+    }
+    throw err;
+  }
 
   res.status(201).json({ userId: userId.toString() });
 });
 
-// Sibling to server/, not inside it: matches how dbClient.js already
-// resolves dbConfig.json one level up. Locally this directory doesn't
-// exist (Vite serves the frontend instead), so this is a no-op in dev -
-// it only does anything once a production deploy places a built React
-// bundle here (see deployReact.sh).
+// Sibling to server/, not inside it: matches how dbClient.js already resolves dbConfig.json one level up. Locally this directory doesn't exist (Vite serves the frontend instead), so this is a no-op in dev - it only does anything once a production deploy places a built React bundle here (see deployReact.sh).
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
 app.use(express.static(PUBLIC_DIR));
 

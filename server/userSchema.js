@@ -11,15 +11,20 @@
 //   height, location, ethnicity, children,
 //   family_plans, pets, age, zodiac_sign,
 //   photoKeys: [String],
+//   registered: Boolean, // false at signup, flipped true by POST /api/auth
 //   createdAt: Date,
 //   password: String,  // bcrypt hash, set by POST /api/auth (server/auth.js)
 //   token: String,     // current session token, set by POST/PUT /api/auth
 // }
 //
-// `password` and `token` are intentionally NOT in USER_FIELDS - they're
-// written directly by server/auth.js, not through this endpoint's
-// client-controlled body, so a signup request can never smuggle in a
-// pre-hashed password or hijack a session token.
+// `password`, `token`, and `registered` are intentionally NOT in USER_FIELDS
+// - they're written directly by server/auth.js or server/index.js's signup
+// handler, not through this endpoint's client-controlled body, so a signup
+// request can never smuggle in a pre-hashed password, hijack a session
+// token, or mark itself already-registered. `registered: false` also backs
+// a TTL index (server/index.js) that auto-expires abandoned bare profiles
+// instead of a later request being able to overwrite/reuse them - see the
+// signup handler's comments for why that reuse approach was rejected.
 
 const USER_FIELDS = [
   "first_name",

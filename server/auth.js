@@ -50,11 +50,21 @@ router.post("/auth", credentialRateLimit, async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const token = uuidv4();
-  await users.updateOne(
-    { email },
-    { $set: { email, password: passwordHash, token }, $setOnInsert: { createdAt: new Date() } },
-    { upsert: true }
-  );
+  try {
+    await users.updateOne(
+      { email },
+      { $set: { email, password: passwordHash, token, registered: true }, $setOnInsert: { createdAt: new Date() } },
+      { upsert: true }
+    );
+  } catch (err) {
+    // The phone_unique_registered index only applies once password is set, so this is the first point a duplicate phone across two different accounts can actually surface - without this catch it'd crash into a generic 500 instead of a proper 409.
+    if (err.code === 11000) {
+      const field = err.keyPattern?.phone ? "phone number" : "email";
+      res.status(409).json({ msg: `That ${field} is already registered to another account.` });
+      return;
+    }
+    throw err;
+  }
 
   setAuthCookie(res, token);
   res.json({ email });
