@@ -61,7 +61,13 @@ export default function Home() {
     });
 
     if (!response.ok) {
-      setLoginError("Incorrect email or password.");
+      if (response.status === 401) {
+        setLoginError("Incorrect email or password.");
+      } else {
+        const data = await response.json().catch(() => null);
+        console.error("Login request failed", data?.error);
+        setLoginError("Something went wrong. Please try again.");
+      }
       return;
     }
 
