@@ -1,4 +1,37 @@
+import { useState } from "react";
+
+const DUPLICATE_MESSAGES = {
+  email: "This email is already registered.",
+  phone: "This phone number is already registered.",
+};
+
 export default function AccountStep({ formData, onChange }) {
+  const [fieldErrors, setFieldErrors] = useState({ email: "", phone: "" });
+
+  // Clears any duplicate error from a previous blur as soon as the user edits the field again, so an old message can't linger on a value that no longer matches it.
+  function handleFieldChange(field, event) {
+    event.target.setCustomValidity("");
+    setFieldErrors((prev) => ({ ...prev, [field]: "" }));
+    onChange(event);
+  }
+
+  // Only checks once the field is already valid on its own (non-empty, right shape) - setCustomValidity makes a hit here block the wizard's "Next" submit the same way the phone `pattern` already does.
+  async function handleFieldBlur(field, event) {
+    const inputEl = event.target;
+    if (!inputEl.value || !inputEl.checkValidity()) return;
+
+    try {
+      const response = await fetch(`/api/users/exists?${new URLSearchParams({ [field]: inputEl.value })}`);
+      const data = response.ok ? await response.json() : null;
+      if (data?.[field]) {
+        inputEl.setCustomValidity(DUPLICATE_MESSAGES[field]);
+        setFieldErrors((prev) => ({ ...prev, [field]: DUPLICATE_MESSAGES[field] }));
+      }
+    } catch {
+      // Best-effort early check - the final /api/signup + /api/auth submit still guards this if the request itself fails.
+    }
+  }
+
   return (
     <fieldset>
       <legend>Step 1 - Basic information</legend>
