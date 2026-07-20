@@ -72,9 +72,15 @@ export default function AccountStep({ formData, onChange }) {
         name="email"
         type="email"
         value={formData.email}
-        onChange={onChange}
+        onChange={(event) => handleFieldChange("email", event)}
+        onBlur={(event) => handleFieldBlur("email", event)}
         required
       />
+      {fieldErrors.email && (
+        <p className="field-error" role="alert">
+          {fieldErrors.email}
+        </p>
+      )}
 
       <label htmlFor="phone">Phone number</label>
       <input
@@ -83,12 +89,18 @@ export default function AccountStep({ formData, onChange }) {
         type="tel"
         placeholder="+1-555-555-5555"
         value={formData.phone}
-        onChange={onChange}
+        onChange={(event) => handleFieldChange("phone", event)}
+        onBlur={(event) => handleFieldBlur("phone", event)}
         pattern="\+?(\d[\s\-.]?){7,15}"
         title="Enter a valid phone number (7-15 digits, e.g. +1-555-555-5555)"
         required
       />
       <p className="field-hint">Digits only, with optional +, spaces, dashes, or dots (7-15 digits).</p>
+      {fieldErrors.phone && (
+        <p className="field-error" role="alert">
+          {fieldErrors.phone}
+        </p>
+      )}
 
       <label htmlFor="password">Password</label>
       <input
