@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser } = require("./authHelpers");
+const { USER_FIELDS, pickFields } = require("./userSchema");
 
 // Credentials live on the same `users` document the signup wizard creates (matched by email) rather than a separate collection, so a profile created via POST /api/signup and credentials registered here end up as one document per person. Because of that, registration only 409s when the matched user already has a `password` set - a bare profile doc with no credentials yet (the normal case right after /api/signup) is fair game to register against.
 
@@ -121,13 +122,19 @@ router.get("/users/exists", existsRateLimit, async (req, res) => {
   res.json(result);
 });
 
+// Doubles as the frontend's single source of truth for the logged-in user's own full profile (src/context/AuthContext.jsx), not just a session check - pickFields(user, USER_FIELDS) already includes email, and deliberately can't include password/token/registered since those aren't in USER_FIELDS.
 router.get("/user/me", async (req, res) => {
   const user = await getAuthenticatedUser(req);
   if (!user) {
     res.status(401).json({ msg: "Unauthorized" });
     return;
   }
-  res.json({ email: user.email });
+  res.json({
+    id: user._id.toString(),
+    ...pickFields(user, USER_FIELDS),
+    photoKeys: user.photoKeys ?? [],
+    visibility: user.visibility ?? {},
+  });
 });
 
 module.exports = router;
