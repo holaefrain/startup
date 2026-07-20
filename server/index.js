@@ -28,6 +28,10 @@ const upload = multer({
 });
 
 const app = express();
+
+// Production runs behind Caddy, so without this every request's req.ip would resolve to Caddy's own address instead of the real client - silently defeating any per-IP rate limiting. `1` trusts exactly the immediate hop (Caddy), not the whole X-Forwarded-For chain.
+
+app.set("trust proxy", 1);
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api", authRouter);
