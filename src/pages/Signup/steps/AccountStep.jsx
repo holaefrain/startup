@@ -51,8 +51,11 @@ export default function AccountStep({ formData, onChange }) {
         placeholder="+1-555-555-5555"
         value={formData.phone}
         onChange={onChange}
+        pattern="\+?(\d[\s\-.]?){7,15}"
+        title="Enter a valid phone number (7-15 digits, e.g. +1-555-555-5555)"
         required
       />
+      <p className="field-hint">Digits only, with optional +, spaces, dashes, or dots (7-15 digits).</p>
 
       <label htmlFor="password">Password</label>
       <input
