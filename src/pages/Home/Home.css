@@ -8,13 +8,52 @@
   display: none;
 }
 
-/* Hidden CSS-side before useScrollReveal/Hero's mount animation ever runs,
-   so there's nothing to flash regardless of JS load timing. */
-[data-reveal],
+/* Hidden CSS-side before Hero's mount animation ever runs, so there's
+   nothing to flash regardless of JS load timing. */
 .hero-photo,
 .hero-title h1,
 .hero-subtitle h2 {
   opacity: 0;
+}
+
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  width: 100%;
+  height: 3px;
+  background: var(--color-text);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.pinned-track {
+  position: relative;
+}
+
+.pinned-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.pinned-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
+  opacity: 0;
+}
+
+/* JS (PinnedScrollStage) takes over opacity once onUpdate fires, but that
+   only happens after the track has actually been scrolled into range - the
+   first panel needs to read as visible before any scroll event occurs. */
+.pinned-panel:first-child {
+  opacity: 1;
 }
 
 #main-nav {

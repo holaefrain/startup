@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { animate } from "animejs";
 import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
+import ScrollProgress from "../../components/ScrollProgress.jsx";
+import PinnedScrollStage from "./PinnedScrollStage.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import sections from "./sections/index.js";
 import "./Home.css";
@@ -10,7 +13,10 @@ export default function Home() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const overlayRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   function openLogin() {
     setIsLoginOpen(true);
@@ -19,6 +25,29 @@ export default function Home() {
   function closeLogin() {
     setIsLoginOpen(false);
   }
+
+  // showModal (not isLoginOpen) drives the `hidden` class below, so the
+  // close animation gets to play before display:none actually removes it.
+  useEffect(() => {
+    if (isLoginOpen) {
+      setShowModal(true);
+      animate(overlayRef.current, { opacity: [0, 1], duration: 250, ease: "outQuad" });
+      animate(dropdownRef.current, {
+        opacity: [0, 1],
+        scale: [0.94, 1],
+        duration: 300,
+        ease: "outQuad",
+      });
+    } else if (showModal) {
+      animate(overlayRef.current, { opacity: [1, 0], duration: 200, ease: "inQuad" });
+      animate(dropdownRef.current, {
+        opacity: [1, 0],
+        scale: [1, 0.94],
+        duration: 200,
+        ease: "inQuad",
+      }).then(() => setShowModal(false));
+    }
+  }, [isLoginOpen]);
 
   async function handleLoginSubmit(event) {
     event.preventDefault();
@@ -43,6 +72,7 @@ export default function Home() {
 
   return (
     <div id="home">
+      <ScrollProgress />
       <AppNav />
       {/* Navigation */}
       <nav id="main-nav">
@@ -63,7 +93,8 @@ export default function Home() {
 
       {/* Login Overlay */}
       <button
-        className={`login-overlay${isLoginOpen ? "" : " hidden"}`}
+        ref={overlayRef}
+        className={`login-overlay${showModal ? "" : " hidden"}`}
         id="loginOverlay"
         type="button"
         aria-label="Close login form"
@@ -71,7 +102,8 @@ export default function Home() {
       ></button>
 
       <div
-        className={`login-dropdown${isLoginOpen ? "" : " hidden"}`}
+        ref={dropdownRef}
+        className={`login-dropdown${showModal ? "" : " hidden"}`}
         id="loginDropdown"
         role="dialog"
         aria-modal="true"
@@ -100,9 +132,7 @@ export default function Home() {
         </form>
       </div>
 
-      {sections.map((Section, index) => (
-        <Section key={index} />
-      ))}
+      <PinnedScrollStage sections={sections} />
 
       <Footer />
     </div>
