@@ -55,9 +55,55 @@ const USER_FIELDS = [
   "zodiac_sign",
 ];
 
-// Allow-list a request body against a known set of fields instead of
-// spreading it directly into a Mongo insert, so a client can't smuggle
-// arbitrary fields into the document.
+// Subset of USER_FIELDS that PATCH /api/profile (server/profile.js) allows editing after signup - deliberately excludes `email` and `phone`, which each now have a partial unique index, and `birthday`, which Profile.jsx never shows (it shows the computed `age` instead); matches src/pages/Profile/Profile.jsx's FIELD_GROUPS keys exactly.
+const PROFILE_EDITABLE_FIELDS = [
+  "first_name",
+  "last_name",
+  "age",
+  "height",
+  "location",
+  "ethnicity",
+  "children",
+  "family_plans",
+  "pets",
+  "zodiac_sign",
+  "pronouns",
+  "gender",
+  "sexuality",
+  "interested_in",
+  "job_title",
+  "school",
+  "education_level",
+  "religion",
+  "hometown",
+  "politics",
+  "languages",
+  "dating_intentions",
+  "relationship_type",
+];
+
+// Further subset of PROFILE_EDITABLE_FIELDS whose visibility can be toggled - excludes `first_name`/`last_name`/`age`/`height`/`location` (locked "Always Visible" in Profile.jsx) and `interested_in` (locked "Always Hidden").
+const VISIBILITY_FIELDS = [
+  "ethnicity",
+  "children",
+  "family_plans",
+  "pets",
+  "zodiac_sign",
+  "pronouns",
+  "gender",
+  "sexuality",
+  "job_title",
+  "school",
+  "education_level",
+  "religion",
+  "hometown",
+  "politics",
+  "languages",
+  "dating_intentions",
+  "relationship_type",
+];
+
+// Allow-list a request body against a known set of fields instead of spreading it directly into a Mongo insert, so a client can't smuggle arbitrary fields into the document.
 function pickFields(source, allowedFields) {
   const result = {};
   for (const field of allowedFields) {
@@ -68,4 +114,4 @@ function pickFields(source, allowedFields) {
   return result;
 }
 
-module.exports = { USER_FIELDS, pickFields };
+module.exports = { USER_FIELDS, PROFILE_EDITABLE_FIELDS, VISIBILITY_FIELDS, pickFields };

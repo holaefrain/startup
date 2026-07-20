@@ -117,8 +117,10 @@ if (step < TOTAL_STEPS) {
 
 Check email availability earlier - e.g. an `onBlur` handler on the email field in [AccountStep.jsx](src/pages/Signup/steps/AccountStep.jsx) that calls a lightweight `GET /api/users/exists?email=` (or equivalent) and shows an inline error on step 1, rather than waiting for the full submit at step 5.
 
-### No rate limiting on POST /api/signup
+### No rate limiting on POST /api/signup, PATCH /api/profile, or PATCH /api/profile/photo
 
 In [server/index.js](server/index.js), `POST /api/signup` has no rate limiter, unlike `POST/PUT /api/auth` and `GET /api/users/exists` (`server/auth.js`), which each use `express-rate-limit`. This is the most expensive endpoint in the app - unauthenticated, and does a real S3 upload per photo plus a Mongo write - so it's a bigger abuse/cost target than the endpoints already covered, even with the `bare_profile_ttl` index bounding long-term junk accumulation.
 
-Add a limiter here matching the pattern already in `server/auth.js` (e.g. a shared or dedicated `rateLimit(...)` instance applied to this route), tuned looser than the auth endpoints since a real user only hits this once per signup attempt but should still tolerate a couple of retries.
+`server/profile.js`'s `PATCH /api/profile` and `PATCH /api/profile/photo` (added in Phase 2 of the backend rewrite) have the same gap. Lower urgency than signup/auth since both require a valid session (abuse is bounded to registered accounts, not the open internet), but still worth covering for consistency.
+
+Add a limiter to all three matching the pattern already in `server/auth.js` (e.g. a shared or dedicated `rateLimit(...)` instance per route), tuned looser than the auth endpoints since a real user only hits these occasionally, not repeatedly in a tight loop.
