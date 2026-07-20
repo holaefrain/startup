@@ -72,6 +72,12 @@ export default function Signup() {
 
   const handlePhotoChange = (index, event) => {
     const file = event.target.files[0] ?? null;
+    if (file && photos.some((photo, i) => i !== index && photo && photo.name === file.name && photo.size === file.size)) {
+      setError("That photo is already used for another slot. Please choose a different photo.");
+      event.target.value = "";
+      return;
+    }
+    setError("");
     setPhotos((prev) => prev.map((photo, i) => (i === index ? file : photo)));
   };
 
