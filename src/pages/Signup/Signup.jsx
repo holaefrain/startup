@@ -136,8 +136,7 @@ export default function Signup() {
         return;
       }
 
-      const { email: registeredEmail } = await authResponse.json();
-      login(registeredEmail);
+      await login();
     } catch (err) {
       console.error("Signup request failed", err);
       setError("Signup failed. Please try again.");

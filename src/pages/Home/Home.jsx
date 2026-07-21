@@ -71,8 +71,7 @@ export default function Home() {
       return;
     }
 
-    const { email: loggedInEmail } = await response.json();
-    login(loggedInEmail);
+    await login();
     navigate("/discover");
   }
 
