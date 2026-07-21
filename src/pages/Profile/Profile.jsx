@@ -8,7 +8,8 @@ const FIELD_GROUPS = [
   {
     title: "My Vitals",
     fields: [
-      { key: "name", label: "Name", locked: "visible" },
+      { key: "first_name", label: "First Name", locked: "visible" },
+      { key: "last_name", label: "Last Name", locked: "visible" },
       { key: "age", label: "Age", locked: "visible" },
       { key: "height", label: "Height", locked: "visible" },
       { key: "location", label: "Location", locked: "visible" },
@@ -44,42 +45,36 @@ const FIELD_GROUPS = [
   },
 ];
 
-const INITIAL_VALUES = {
-  name: "Jordan Rivera",
-  age: "25",
-  height: "6'0\"",
-  location: "Salt Lake City, UT",
-  ethnicity: "Hispanic/Latino",
-  children: "Don't have children",
-  family_plans: "Not sure",
-  pets: "None",
-  zodiac_sign: "Aquarius",
-  pronouns: "He/Him",
-  gender: "Man",
-  sexuality: "Straight",
-  interested_in: "Women",
-  job_title: "Software Engineer",
-  school: "State University",
-  education_level: "Bachelor's degree",
-  religion: "Christian",
-  hometown: "Los Angeles, CA",
-  politics: "Liberal",
-  languages: "English, Spanish",
-  dating_intentions: "Long-term relationship",
-  relationship_type: "Monogamy",
-};
-
 const ALL_FIELDS = FIELD_GROUPS.flatMap((group) => group.fields);
-const INITIAL_VISIBILITY = Object.fromEntries(
-  ALL_FIELDS.filter((field) => !field.locked).map((field) => [field.key, "visible"])
-);
+
+function patchProfile(body) {
+  return fetch("/api/profile", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
 
 export default function Profile() {
-  const { user } = useAuth();
-  const [values, setValues] = useState(INITIAL_VALUES);
-  const [visibility, setVisibility] = useState(INITIAL_VISIBILITY);
+  const { user, refreshUser } = useAuth();
+  // null until seeded from `user` - seeded exactly once (see the effect
+  // below), not re-synced on every refreshUser() call, since our own
+  // optimistic updates already keep this accurate and re-syncing would
+  // risk clobbering an in-progress edit on a different field mid-typing.
+  const [values, setValues] = useState(null);
+  const [visibility, setVisibility] = useState({});
   const [editingKey, setEditingKey] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
+
+  useEffect(() => {
+    if (!user || values !== null) return;
+    const initial = {};
+    for (const field of ALL_FIELDS) {
+      initial[field.key] = user[field.key] ?? "";
+    }
+    setValues(initial);
+    setVisibility(user.visibility ?? {});
+  }, [user, values]);
 
   const photoPreviewUrl = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile]);
   useEffect(() => {
@@ -87,15 +82,28 @@ export default function Profile() {
   }, [photoPreviewUrl]);
 
   function handlePhotoChange(event) {
-    setPhotoFile(event.target.files[0] ?? null);
+    const file = event.target.files[0] ?? null;
+    setPhotoFile(file);
+    if (!file) return;
+
+    const body = new FormData();
+    body.append("photo", file);
+    fetch("/api/profile/photo", { method: "PATCH", body }).then((response) => response.ok && refreshUser());
   }
 
-  function updateValue(key, value) {
+  function handleFieldInput(key, value) {
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
+  function commitField(key) {
+    setEditingKey(null);
+    patchProfile({ fields: { [key]: values[key] } }).then((response) => response.ok && refreshUser());
+  }
+
   function toggleVisibility(key) {
-    setVisibility((prev) => ({ ...prev, [key]: prev[key] === "visible" ? "hidden" : "visible" }));
+    const next = visibility[key] === "hidden" ? "visible" : "hidden";
+    setVisibility((prev) => ({ ...prev, [key]: next }));
+    patchProfile({ visibility: { [key]: next } }).then((response) => response.ok && refreshUser());
   }
 
   function visibilityLabel(field) {
@@ -119,56 +127,51 @@ export default function Profile() {
             <label className="profile-photo-edit" htmlFor="profile-photo-input" aria-label="Edit profile photo">
               &#9998;
             </label>
-            <input
-              id="profile-photo-input"
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              hidden
-            />
+            <input id="profile-photo-input" type="file" accept="image/*" onChange={handlePhotoChange} hidden />
           </div>
-          <h2 className="profile-name">{values.name}</h2>
+          {values && (
+            <h2 className="profile-name">
+              {values.first_name} {values.last_name}
+            </h2>
+          )}
           {user?.email && <p className="profile-email">{user.email}</p>}
         </section>
 
-        {FIELD_GROUPS.map((group) => (
-          <section key={group.title} className="profile-field-group">
-            <h2>{group.title}</h2>
-            <ul>
-              {group.fields.map((field) => (
-                <li key={field.key} className="profile-field-row">
-                  <button
-                    type="button"
-                    className="profile-field-main"
-                    onClick={() => setEditingKey(field.key)}
-                  >
-                    <span className="profile-field-label">{field.label}</span>
-                    {editingKey === field.key ? (
-                      <input
-                        autoFocus
-                        value={values[field.key]}
-                        onChange={(event) => updateValue(field.key, event.target.value)}
-                        onBlur={() => setEditingKey(null)}
-                        onKeyDown={(event) => event.key === "Enter" && setEditingKey(null)}
-                        onClick={(event) => event.stopPropagation()}
-                      />
-                    ) : (
-                      <span className="profile-field-value">{values[field.key] || "Add"}</span>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    className="profile-field-visibility"
-                    disabled={!!field.locked}
-                    onClick={() => toggleVisibility(field.key)}
-                  >
-                    {visibilityLabel(field)}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+        {values &&
+          FIELD_GROUPS.map((group) => (
+            <section key={group.title} className="profile-field-group">
+              <h2>{group.title}</h2>
+              <ul>
+                {group.fields.map((field) => (
+                  <li key={field.key} className="profile-field-row">
+                    <button type="button" className="profile-field-main" onClick={() => setEditingKey(field.key)}>
+                      <span className="profile-field-label">{field.label}</span>
+                      {editingKey === field.key ? (
+                        <input
+                          autoFocus
+                          value={values[field.key]}
+                          onChange={(event) => handleFieldInput(field.key, event.target.value)}
+                          onBlur={() => commitField(field.key)}
+                          onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
+                          onClick={(event) => event.stopPropagation()}
+                        />
+                      ) : (
+                        <span className="profile-field-value">{values[field.key] || "Add"}</span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="profile-field-visibility"
+                      disabled={!!field.locked}
+                      onClick={() => toggleVisibility(field.key)}
+                    >
+                      {visibilityLabel(field)}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
       </main>
 
       <Footer />
