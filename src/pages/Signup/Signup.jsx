@@ -118,17 +118,18 @@ export default function Signup() {
     setSubmitting(true);
     try {
       const response = await fetch("/api/signup", { method: "POST", body });
+      const signupData = await response.json();
       if (!response.ok) {
-        const { error: message } = await response.json();
-        setError(message || "Signup failed. Please try again.");
+        setError(signupData.error || "Signup failed. Please try again.");
         setSubmitting(false);
         return;
       }
 
+      // Passing the userId POST /api/signup just returned lets POST /api/auth register this exact profile document, rather than re-resolving by email - which would be ambiguous (and could register the wrong document) if another bare profile ever happened to share this email.
       const authResponse = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.email, password: formData.password }),
+        body: JSON.stringify({ email: formData.email, password: formData.password, userId: signupData.userId }),
       });
       if (!authResponse.ok) {
         setError("Signup failed. Please try again.");

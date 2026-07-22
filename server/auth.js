@@ -2,6 +2,7 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
+const { ObjectId } = require("mongodb");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser } = require("./authHelpers");
 const { USER_FIELDS, pickFields } = require("./userSchema");
@@ -38,13 +39,41 @@ function setAuthCookie(res, token) {
   });
 }
 
+// Registers credentials onto an existing bare profile doc - never creates one from scratch (no more upsert), since a credential-only account with no profile was never a real intended state. Prefers targeting the exact doc by `userId` (the id POST /api/signup just returned) rather than re-resolving by email a second time - if two bare docs happen to share an email (e.g. an old one left over from before a duplicate-prevention fix shipped), an unordered email lookup could silently register the wrong one, stranding the caller's actual just-submitted data on an orphaned duplicate. `userId` is optional only for workflows that create a bare doc outside of POST /api/signup (e.g. server/seedAdminUser.js's direct Mongo insert) - in that fallback path, more than one bare candidate for the same email means we can't tell which one is meant, so this refuses rather than guessing.
 router.post("/auth", credentialRateLimit, async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, userId } = req.body;
   const db = await getDb();
   const users = db.collection("users");
 
-  const existing = await users.findOne({ email });
-  if (existing?.password) {
+  let existing;
+  if (userId) {
+    if (typeof userId !== "string" || !ObjectId.isValid(userId)) {
+      res.status(400).json({ msg: "Invalid userId." });
+      return;
+    }
+    existing = await users.findOne({ _id: new ObjectId(userId) });
+    if (existing && existing.email !== email) {
+      res.status(400).json({ msg: "Email does not match this profile." });
+      return;
+    }
+  } else {
+    const candidates = await users.find({ email }).toArray();
+    if (candidates.some((doc) => doc.password)) {
+      res.status(409).json({ msg: "Existing user" });
+      return;
+    }
+    if (candidates.length > 1) {
+      res.status(409).json({ msg: "Multiple profiles share this email - registration must specify which one (userId)." });
+      return;
+    }
+    existing = candidates[0];
+  }
+
+  if (!existing) {
+    res.status(404).json({ msg: "Profile not found. Sign up first." });
+    return;
+  }
+  if (existing.password) {
     res.status(409).json({ msg: "Existing user" });
     return;
   }
@@ -53,9 +82,8 @@ router.post("/auth", credentialRateLimit, async (req, res) => {
   const token = uuidv4();
   try {
     await users.updateOne(
-      { email },
-      { $set: { email, password: passwordHash, token, registered: true }, $setOnInsert: { createdAt: new Date() } },
-      { upsert: true }
+      { _id: existing._id },
+      { $set: { password: passwordHash, token, registered: true } }
     );
   } catch (err) {
     // The phone_unique_registered index only applies once password is set, so this is the first point a duplicate phone across two different accounts can actually surface - without this catch it'd crash into a generic 500 instead of a proper 409.

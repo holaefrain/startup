@@ -1,18 +1,17 @@
 const fs = require("fs");
 const path = require("path");
+const { getDb, client } = require("./dbClient");
 
-// Seeds 10 fake profiles (5 female, 5 male) through the real POST /api/signup
-// route - not a direct Mongo insert - so they go through the exact same
-// validation, S3 upload, and document shape as a real signup. Requires the
-// Express server to already be running (`npm run server`).
+// Seeds 10 fake profiles (5 female, 5 male) through the real POST /api/signup and POST /api/auth routes - not a direct Mongo insert - so they go through the exact same validation, S3 upload, document shape, and registration as a real signup. Requires the Express server to already be running (`npm run server`). Re-running is safe - a profile that already exists (409 from signup) is skipped rather than aborting the whole batch, so seed -> demo -> clear -> reseed is a smooth cycle.
 
 const API_URL = process.env.SEED_API_URL || "http://localhost:3000/api/signup";
+const AUTH_URL = process.env.SEED_AUTH_URL || "http://localhost:3000/api/auth";
+// Not sensitive - these are fake demo accounts, not real credentials, and the value is shared across all of them intentionally.
+const DEMO_PASSWORD = "SeedDemo123!";
 const IMG_DIR = path.join(__dirname, "../src/assets/img");
 const PHOTO_FILES = ["homepage1.jpg", "homepage2.jpg", "homepage3.jpeg"];
 
-// Duplicated from src/pages/Signup/dateUtils.js (an ES module; this seed
-// script is CommonJS) so seeded users get the same age/zodiac the real
-// signup wizard would compute client-side.
+// Duplicated from src/pages/Signup/dateUtils.js (an ES module; this seed script is CommonJS) so seeded users get the same age/zodiac the real signup wizard would compute client-side.
 const ZODIAC_CUTOFFS = [
   { sign: "Capricorn", month: 1, day: 19 },
   { sign: "Aquarius", month: 2, day: 18 },
@@ -158,6 +157,7 @@ function loadPhotoBuffers() {
   }));
 }
 
+// Returns { skipped: true } if this profile's email is already a fully registered account (409 from signup) - a normal outcome on a re-run, not a failure. Otherwise signs up, then registers via POST /api/auth with the shared demo password.
 async function seedProfile(profile, photoFiles) {
   const body = new FormData();
   const fields = {
@@ -174,21 +174,49 @@ async function seedProfile(profile, photoFiles) {
     body.append("photos", new Blob([buffer], { type }), filename);
   });
 
-  const response = await fetch(API_URL, { method: "POST", body });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(`Failed to seed ${profile.first_name} ${profile.last_name}: ${data.error}`);
+  const signupResponse = await fetch(API_URL, { method: "POST", body });
+  const signupData = await signupResponse.json();
+
+  if (!signupResponse.ok) {
+    if (signupResponse.status === 409) {
+      return { skipped: true };
+    }
+    throw new Error(`Failed to seed ${profile.first_name} ${profile.last_name}: ${signupData.error}`);
   }
-  return data.userId;
+
+  const authResponse = await fetch(AUTH_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: profile.email, password: DEMO_PASSWORD, userId: signupData.userId }),
+  });
+  if (!authResponse.ok) {
+    const authData = await authResponse.json().catch(() => ({}));
+    throw new Error(`Failed to register ${profile.first_name} ${profile.last_name}: ${authData.msg || authResponse.status}`);
+  }
+
+  return { skipped: false, userId: signupData.userId };
 }
 
 async function main() {
   const photoFiles = loadPhotoBuffers();
   for (const profile of PROFILES) {
-    const userId = await seedProfile(profile, photoFiles);
-    console.log(`Created ${profile.first_name} ${profile.last_name} (${profile.gender}) -> ${userId}`);
+    const result = await seedProfile(profile, photoFiles);
+    console.log(
+      result.skipped
+        ? `${profile.first_name} ${profile.last_name} already exists - skipped.`
+        : `Created ${profile.first_name} ${profile.last_name} (${profile.gender}) -> ${result.userId}`
+    );
   }
-  console.log(`Seeded ${PROFILES.length} test users.`);
+
+  // One bulk update covers both newly-created and already-existing profiles, so isSeed ends up set either way without branching per profile.
+  const db = await getDb();
+  const markResult = await db
+    .collection("users")
+    .updateMany({ email: { $in: PROFILES.map((profile) => profile.email) } }, { $set: { isSeed: true } });
+  console.log(`Marked ${markResult.modifiedCount} seed user(s) with isSeed: true.`);
+  await client.close();
+
+  console.log(`Seeded ${PROFILES.length} test users (demo password: ${DEMO_PASSWORD}).`);
 }
 
 main().catch((error) => {
