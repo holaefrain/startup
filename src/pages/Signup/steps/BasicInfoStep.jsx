@@ -1,3 +1,5 @@
+import CityAutocompleteInput from "../../../components/CityAutocompleteInput.jsx";
+
 export default function BasicInfoStep({ formData, onChange }) {
   return (
     <fieldset>
@@ -39,7 +41,7 @@ export default function BasicInfoStep({ formData, onChange }) {
       </select>
 
       <label htmlFor="hometown">Hometown</label>
-      <input id="hometown" name="hometown" type="text" value={formData.hometown} onChange={onChange} />
+      <CityAutocompleteInput id="hometown" name="hometown" value={formData.hometown} onChange={onChange} />
 
       <label htmlFor="politics">Politics</label>
       <select id="politics" name="politics" value={formData.politics} onChange={onChange}>
