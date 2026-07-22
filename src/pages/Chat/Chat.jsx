@@ -1,117 +1,105 @@
 import { useEffect, useRef, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 import placeholderPhoto from "../../assets/img/1080x1920.png";
 
-// local state only, no real
-// matches/messages backend or WebSocket yet (see architecture.md's
-// "Planned: Chat" section). Structure matches that plan though - a match
-// list with a last-message preview, click into a full thread, and a
-// "Plan a date" button that would call the Google Maps API server-side.
-
-const MOCK_REPLIES = [
-  "Sounds good to me!",
-  "Haha, fair enough.",
-  "Let's do it.",
-  "I was just thinking the same thing.",
-];
-
+// Still a mock - Phase 6 of the backend rewrite wires this to a real server-side Google Maps call (see architecture.md's "Planned: Chat" section).
 const MOCK_VENUES = [
   { name: "Rye Diner", detail: "Cafe · 0.4 mi away" },
   { name: "The Gateway", detail: "Shops & food · 1.2 mi away" },
   { name: "Liberty Park", detail: "Park · 0.8 mi away" },
 ];
 
-const INITIAL_MATCHES = [
-  {
-    id: 1,
-    name: "Ava",
-    age: 29,
-    job_title: "Graphic Designer",
-    hometown: "Salt Lake City, UT",
-    messages: [
-      { id: 1, sender: "match", text: "Hey! How was the coffee place you mentioned?" },
-      { id: 2, sender: "me", text: "Really good actually, we should go sometime" },
-      { id: 3, sender: "match", text: "I'm free this weekend if you want to propose something" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Daniel",
-    age: 32,
-    job_title: "Product Manager",
-    hometown: "Provo, UT",
-    messages: [
-      { id: 1, sender: "match", text: "Hey, great to match with you!" },
-      { id: 2, sender: "me", text: "You too! What are you up to this week?" },
-    ],
-  },
-  {
-    id: 3,
-    name: "Grace",
-    age: 27,
-    job_title: "Teacher",
-    hometown: "Logan, UT",
-    messages: [{ id: 1, sender: "match", text: "Haha okay that's a good one" }],
-  },
-];
-
-// Hinge-style grouping: it's "your turn" when the match's last message is
-// waiting on a reply from me, "their turn" once I've replied and I'm the
-// one waiting. Derived from the messages themselves rather than stored, so
-// it can't drift out of sync with the thread.
-function lastMessageOf(match) {
-  return match.messages[match.messages.length - 1];
-}
-
-function isYourTurn(match) {
-  return lastMessageOf(match).sender === "match";
+// A fresh match with no messages yet is "your turn" (the "you matched, say hi" state); otherwise it's your turn whenever the other person sent the most recent message - read from each match's precomputed lastMessage summary, not the full thread.
+function isYourTurn(match, currentUserId) {
+  return !match.lastMessage || match.lastMessage.senderId !== currentUserId;
 }
 
 export default function Chat() {
-  const [matches, setMatches] = useState(INITIAL_MATCHES);
+  const { user } = useAuth();
+  const [matches, setMatches] = useState(null);
+  const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const [messagesByMatch, setMessagesByMatch] = useState({});
+  const [threadLoading, setThreadLoading] = useState(false);
   const [draft, setDraft] = useState("");
   const [showDatePlanner, setShowDatePlanner] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const threadEndRef = useRef(null);
 
-  const selectedMatch = matches.find((match) => match.id === selectedId) ?? null;
-  const yourTurnMatches = matches.filter(isYourTurn);
-  const theirTurnMatches = matches.filter((match) => !isYourTurn(match));
+  // Loads the match list once on mount.
+  useEffect(() => {
+    fetch("/api/matches")
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to load matches.");
+        return response.json();
+      })
+      .then(setMatches)
+      .catch(() => setError("Couldn't load matches. Please try again."));
+  }, []);
 
+  const selectedMatch = matches?.find((match) => match.id === selectedId) ?? null;
+  const selectedMessages = selectedId ? messagesByMatch[selectedId] : null;
+  const yourTurnMatches = matches?.filter((match) => isYourTurn(match, user.id)) ?? [];
+  const theirTurnMatches = matches?.filter((match) => !isYourTurn(match, user.id)) ?? [];
+
+  // Keeps the newest message in view as the thread grows.
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ block: "nearest" });
-  }, [selectedMatch?.messages]);
+  }, [selectedMessages]);
 
+  // Fetches a match's thread once and caches it - only on success, so a failed request isn't permanently mistaken for "this match really has no messages" and doesn't block a retry on reselect.
   function openMatch(id) {
     setSelectedId(id);
     setShowDatePlanner(false);
     setShowProfile(false);
+
+    if (messagesByMatch[id]) return;
+    setThreadLoading(true);
+    fetch(`/api/matches/${id}/messages`)
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to load thread.");
+        return response.json();
+      })
+      .then((thread) => setMessagesByMatch((prev) => ({ ...prev, [id]: thread })))
+      .catch(() => {})
+      .finally(() => setThreadLoading(false));
   }
 
+  // Sends the draft, appends the real saved message to the thread cache and the match list's lastMessage summary, and restores the draft on failure instead of silently losing what was typed.
   function handleSend(event) {
     event.preventDefault();
-    if (!draft.trim() || !selectedMatch) return;
+    const text = draft.trim();
+    if (!text || !selectedMatch) return;
 
-    const myMessage = { id: Date.now(), sender: "me", text: draft.trim() };
-    const matchId = selectedMatch.id;
     setDraft("");
-    setMatches((prev) =>
-      prev.map((match) => (match.id === matchId ? { ...match, messages: [...match.messages, myMessage] } : match))
-    );
-
-    // Mocked reply so the thread feels alive without a backend.
-    const reply = MOCK_REPLIES[Math.floor(Math.random() * MOCK_REPLIES.length)];
-    setTimeout(() => {
-      setMatches((prev) =>
-        prev.map((match) =>
-          match.id === matchId
-            ? { ...match, messages: [...match.messages, { id: Date.now() + 1, sender: "match", text: reply }] }
-            : match
-        )
-      );
-    }, 800);
+    fetch(`/api/matches/${selectedMatch.id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to send message.");
+        return response.json();
+      })
+      .then((message) => {
+        setMessagesByMatch((prev) => ({
+          ...prev,
+          [selectedMatch.id]: [...(prev[selectedMatch.id] ?? []), message],
+        }));
+        setMatches((prev) =>
+          prev.map((match) =>
+            match.id === selectedMatch.id
+              ? {
+                  ...match,
+                  lastMessage: { senderId: message.senderId, text: message.text, createdAt: message.createdAt },
+                }
+              : match
+          )
+        );
+      })
+      .catch(() => setDraft(text));
   }
 
   return (
@@ -123,23 +111,33 @@ export default function Chat() {
       </header>
 
       <main>
-        {!selectedMatch && (
+        {error && <p role="alert">{error}</p>}
+
+        {!error && !selectedMatch && (
           <section className="match-list" aria-live="polite">
             <h2>Matches</h2>
 
-            <h3>Your turn ({yourTurnMatches.length})</h3>
-            <ul>
-              {yourTurnMatches.map((match) => (
-                <MatchRow key={match.id} match={match} onSelect={openMatch} />
-              ))}
-            </ul>
+            {!matches && <p>Loading matches...</p>}
 
-            <h3>Their turn ({theirTurnMatches.length})</h3>
-            <ul>
-              {theirTurnMatches.map((match) => (
-                <MatchRow key={match.id} match={match} onSelect={openMatch} />
-              ))}
-            </ul>
+            {matches && matches.length === 0 && <p>No matches yet - keep swiping on Discover!</p>}
+
+            {matches && matches.length > 0 && (
+              <>
+                <h3>Your turn ({yourTurnMatches.length})</h3>
+                <ul>
+                  {yourTurnMatches.map((match) => (
+                    <MatchRow key={match.id} match={match} currentUserId={user.id} onSelect={openMatch} />
+                  ))}
+                </ul>
+
+                <h3>Their turn ({theirTurnMatches.length})</h3>
+                <ul>
+                  {theirTurnMatches.map((match) => (
+                    <MatchRow key={match.id} match={match} currentUserId={user.id} onSelect={openMatch} />
+                  ))}
+                </ul>
+              </>
+            )}
           </section>
         )}
 
@@ -149,7 +147,7 @@ export default function Chat() {
               <button type="button" onClick={() => setSelectedId(null)}>
                 Back
               </button>
-              <h2>{selectedMatch.name}</h2>
+              <h2>{selectedMatch.otherUser.first_name}</h2>
               <button type="button" onClick={() => setShowProfile((prev) => !prev)}>
                 View profile
               </button>
@@ -160,12 +158,13 @@ export default function Chat() {
 
             {showProfile && (
               <div className="profile-preview">
-                <img className="photo-placeholder" src={placeholderPhoto} alt={selectedMatch.name} />
+                <img className="photo-placeholder" src={placeholderPhoto} alt={selectedMatch.otherUser.first_name} />
                 <p>
-                  <strong>{selectedMatch.name}</strong>, {selectedMatch.age}
+                  <strong>{selectedMatch.otherUser.first_name}</strong>
+                  {selectedMatch.otherUser.age != null ? `, ${selectedMatch.otherUser.age}` : ""}
                 </p>
-                <p>{selectedMatch.job_title}</p>
-                <p>{selectedMatch.hometown}</p>
+                {selectedMatch.otherUser.job_title && <p>{selectedMatch.otherUser.job_title}</p>}
+                {selectedMatch.otherUser.hometown && <p>{selectedMatch.otherUser.hometown}</p>}
               </div>
             )}
 
@@ -183,8 +182,15 @@ export default function Chat() {
             )}
 
             <ul className="message-thread">
-              {selectedMatch.messages.map((message) => (
-                <li key={message.id} className={`message message-${message.sender}`}>
+              {threadLoading && !selectedMessages && <li>Loading messages...</li>}
+              {selectedMessages?.length === 0 && (
+                <li className="message-empty">Say hi to {selectedMatch.otherUser.first_name}!</li>
+              )}
+              {selectedMessages?.map((message) => (
+                <li
+                  key={message.id}
+                  className={`message ${message.senderId === user.id ? "message-me" : "message-match"}`}
+                >
                   {message.text}
                 </li>
               ))}
@@ -213,17 +219,18 @@ export default function Chat() {
   );
 }
 
-function MatchRow({ match, onSelect }) {
-  const lastMessage = lastMessageOf(match);
+// One row in the match list - shows the other person's name and either the last message (prefixed "You: " if I sent it) or a "Say hi!" prompt for a message-less match.
+function MatchRow({ match, currentUserId, onSelect }) {
   return (
     <li>
       <button type="button" className="match-row" onClick={() => onSelect(match.id)}>
         <img className="match-photo-placeholder" src={placeholderPhoto} alt="" aria-hidden="true" />
         <span className="match-info">
-          <span className="match-name">{match.name}</span>
+          <span className="match-name">{match.otherUser.first_name}</span>
           <span className="match-preview">
-            {lastMessage.sender === "me" ? "You: " : ""}
-            {lastMessage.text}
+            {match.lastMessage
+              ? `${match.lastMessage.senderId === currentUserId ? "You: " : ""}${match.lastMessage.text}`
+              : "Say hi!"}
           </span>
         </span>
       </button>
