@@ -11,6 +11,7 @@
     "test:s3": "node --env-file=.env server/testS3Connection.js",
     "test:db": "node server/testDbConnection.js",
     "seed:users": "node server/seedTestUsers.js",
+    "seed:matches": "node server/seedMatches.js",
     "seed:admin": "node server/seedAdminUser.js",
     "seed:clear": "node --env-file=.env server/clearTestUsers.js",
     "test": "echo \"Error: no test specified\" && exit 1"
