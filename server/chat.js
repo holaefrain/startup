@@ -3,6 +3,7 @@ const { ObjectId } = require("mongodb");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser } = require("./authHelpers");
 const { PUBLIC_QUERY_PROJECTION, projectVisibleFields } = require("./userSchema");
+const { broadcastToUsers } = require("./websocket");
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -147,12 +148,21 @@ router.post("/matches/:matchId/messages", requireMatchMembership, async (req, re
   const db = await getDb();
   const result = await db.collection("messages").insertOne(message);
 
-  res.status(201).json({
+  const responseMessage = {
     id: result.insertedId.toString(),
     senderId: message.senderId.toString(),
     text: message.text,
     createdAt: message.createdAt,
+  };
+
+  // Both participants, not just "the other one" - covers the sender's own other open tabs too; whichever tab actually POSTed this already has it from the HTTP response below, and the client-side de-dup absorbs the echo it receives here.
+  broadcastToUsers([req.match.userA, req.match.userB], {
+    type: "message",
+    matchId: req.match._id.toString(),
+    message: responseMessage,
   });
+
+  res.status(201).json(responseMessage);
 });
 
 module.exports = router;
