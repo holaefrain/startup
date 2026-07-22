@@ -12,6 +12,24 @@ function canonicalPair(id1, id2) {
   return id1.toHexString() < id2.toHexString() ? [id1, id2] : [id2, id1];
 }
 
+// Creates (or returns the existing) match between two users - canonicalizes the pair first, race-safe via the E11000 catch if a concurrent request creates the same match between the existence check and the insert. Shared by the real mutual-like path below and server/seedMatches.js, so there's exactly one implementation of "how a match gets created."
+async function ensureMatch(matches, id1, id2) {
+  const [userA, userB] = canonicalPair(id1, id2);
+  const existing = await matches.findOne({ userA, userB });
+  if (existing) return existing._id;
+
+  try {
+    const result = await matches.insertOne({ userA, userB, createdAt: new Date() });
+    return result.insertedId;
+  } catch (err) {
+    if (err.code === 11000) {
+      const raceMatch = await matches.findOne({ userA, userB });
+      return raceMatch?._id;
+    }
+    throw err;
+  }
+}
+
 router.post("/swipes", async (req, res) => {
   const currentUser = await getAuthenticatedUser(req);
   if (!currentUser) {
@@ -64,25 +82,11 @@ router.post("/swipes", async (req, res) => {
     return;
   }
 
-  const [userA, userB] = canonicalPair(currentUser._id, targetId);
-  const existingMatch = await matches.findOne({ userA, userB });
-  if (existingMatch) {
-    res.json({ matched: true, matchId: existingMatch._id.toString() });
-    return;
-  }
-
-  try {
-    const result = await matches.insertOne({ userA, userB, createdAt: new Date() });
-    res.json({ matched: true, matchId: result.insertedId.toString() });
-  } catch (err) {
-    if (err.code === 11000) {
-      // Race: the other side's own request created the match between our existence check and our insert.
-      const raceMatch = await matches.findOne({ userA, userB });
-      res.json({ matched: true, matchId: raceMatch?._id.toString() });
-      return;
-    }
-    throw err;
-  }
+  const matchId = await ensureMatch(matches, currentUser._id, targetId);
+  res.json({ matched: true, matchId: matchId.toString() });
 });
+
+router.canonicalPair = canonicalPair;
+router.ensureMatch = ensureMatch;
 
 module.exports = router;
