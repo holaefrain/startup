@@ -13,6 +13,7 @@ const discoverRouter = require("./discover");
 const profileRouter = require("./profile");
 const swipesRouter = require("./swipes");
 const chatRouter = require("./chat");
+const placesRouter = require("./places");
 const { attachWebSocketServer } = require("./websocket");
 
 const MAX_PHOTOS = 8;
@@ -44,6 +45,7 @@ app.use("/api", discoverRouter);
 app.use("/api", profileRouter);
 app.use("/api", swipesRouter);
 app.use("/api", chatRouter);
+app.use("/api", placesRouter);
 
 // Single signup endpoint: the wizard collects all 5 steps in one component and submits once at the end, so this does one insert rather than creating a document in step 1 and patching it across separate requests.
 app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => {
