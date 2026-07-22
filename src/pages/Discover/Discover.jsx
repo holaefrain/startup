@@ -7,6 +7,7 @@ export default function Discover() {
   const [profiles, setProfiles] = useState(null);
   const [index, setIndex] = useState(0);
   const [error, setError] = useState("");
+  const [matchNotice, setMatchNotice] = useState(null);
 
   useEffect(() => {
     fetch("/api/discover")
@@ -18,8 +19,25 @@ export default function Discover() {
       .catch(() => setError("Couldn't load profiles. Please try again."));
   }, []);
 
-  const advance = () => setIndex((prev) => prev + 1);
   const profile = profiles?.[index];
+
+  // Advances immediately regardless of the swipe request's latency - the swipe write doesn't need to block the UI. Captures `profile` before advancing since `index` (and therefore `profile`) changes right away.
+  function swipe(action) {
+    const swipedProfile = profile;
+    setIndex((prev) => prev + 1);
+    if (!swipedProfile) return;
+
+    fetch("/api/swipes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ toUserId: swipedProfile.id, action }),
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (data?.matched) setMatchNotice(`You and ${swipedProfile.first_name} matched!`);
+      })
+      .catch(() => {});
+  }
 
   return (
     <div id="discover">
@@ -30,6 +48,15 @@ export default function Discover() {
       </header>
 
       <main>
+        {matchNotice && (
+          <div className="match-banner" role="status">
+            <p>{matchNotice}</p>
+            <button type="button" onClick={() => setMatchNotice(null)}>
+              Dismiss
+            </button>
+          </div>
+        )}
+
         <section className="swipe-area" aria-live="polite">
           {error && <p role="alert">{error}</p>}
 
@@ -70,10 +97,10 @@ export default function Discover() {
         </section>
 
         <section className="controls">
-          <button id="dislike-btn" aria-label="Dislike" type="button" disabled={!profile} onClick={advance}>
+          <button id="dislike-btn" aria-label="Dislike" type="button" disabled={!profile} onClick={() => swipe("pass")}>
             Nope
           </button>
-          <button id="like-btn" aria-label="Like" type="button" disabled={!profile} onClick={advance}>
+          <button id="like-btn" aria-label="Like" type="button" disabled={!profile} onClick={() => swipe("like")}>
             Like
           </button>
         </section>

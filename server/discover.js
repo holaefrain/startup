@@ -24,9 +24,14 @@ router.get("/discover", async (req, res) => {
   }
 
   const db = await getDb();
+  // Already-swiped profiles (liked, passed, or matched) shouldn't reappear, and bare/incomplete signups (Phase 1's registered flag) shouldn't show up as swipeable people in the first place.
+  const swipedIds = await db.collection("swipes").distinct("toUserId", { fromUserId: currentUser._id });
   const profiles = await db
     .collection("users")
-    .find({ _id: { $ne: currentUser._id } }, { projection: DISCOVER_PROJECTION })
+    .find(
+      { _id: { $nin: [...swipedIds, currentUser._id] }, registered: true },
+      { projection: DISCOVER_PROJECTION }
+    )
     .toArray();
 
   res.json(profiles.map(({ _id, ...profile }) => ({ id: _id.toString(), ...profile })));

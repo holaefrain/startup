@@ -10,6 +10,7 @@ const { USER_FIELDS, pickFields } = require("./userSchema");
 const authRouter = require("./auth");
 const discoverRouter = require("./discover");
 const profileRouter = require("./profile");
+const swipesRouter = require("./swipes");
 
 const MAX_PHOTOS = 8;
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8MB per photo
@@ -38,6 +39,7 @@ app.use(cookieParser());
 app.use("/api", authRouter);
 app.use("/api", discoverRouter);
 app.use("/api", profileRouter);
+app.use("/api", swipesRouter);
 
 // Single signup endpoint: the wizard collects all 5 steps in one component and submits once at the end, so this does one insert rather than creating a document in step 1 and patching it across separate requests.
 app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => {

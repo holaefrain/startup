@@ -25,6 +25,17 @@ const upload = multer({
 
 const router = express.Router();
 
+// Runs before multer on the photo route specifically so an unauthenticated request is rejected before the server spends effort buffering an up-to-8MB upload into memory, not after.
+async function requireAuth(req, res, next) {
+  const user = await getAuthenticatedUser(req);
+  if (!user) {
+    res.status(401).json({ msg: "Unauthorized" });
+    return;
+  }
+  req.user = user;
+  next();
+}
+
 // Iterates VISIBILITY_FIELDS itself rather than the client's own object keys, so a malicious key (e.g. one containing "$" or ".") can never reach a MongoDB update path - same principle userSchema.js's pickFields already uses for field allow-listing.
 function pickVisibility(source) {
   const result = {};
@@ -38,12 +49,8 @@ function pickVisibility(source) {
 }
 
 // Body is JSON { fields?: {...}, visibility?: {...} }, both allow-listed against server/userSchema.js so a client can only ever touch the exact fields Profile.jsx exposes - notably never email/phone, which each have a partial unique index (see server/index.js's account-takeover fix).
-router.patch("/profile", async (req, res) => {
-  const user = await getAuthenticatedUser(req);
-  if (!user) {
-    res.status(401).json({ msg: "Unauthorized" });
-    return;
-  }
+router.patch("/profile", requireAuth, async (req, res) => {
+  const { user } = req;
 
   const fields = pickFields(req.body.fields ?? {}, PROFILE_EDITABLE_FIELDS);
   const visibility = pickVisibility(req.body.visibility);
@@ -65,12 +72,8 @@ router.patch("/profile", async (req, res) => {
 });
 
 // Deleting the previous avatar before uploading the new one is safe here specifically because both the read and the delete are scoped to the authenticated user's own _id from their session token, never a client-supplied identity - unlike the account-takeover bug this same pattern caused in an earlier version of POST /api/signup, which read/deleted someone else's key based on an unauthenticated email match.
-router.patch("/profile/photo", upload.single("photo"), async (req, res) => {
-  const user = await getAuthenticatedUser(req);
-  if (!user) {
-    res.status(401).json({ msg: "Unauthorized" });
-    return;
-  }
+router.patch("/profile/photo", requireAuth, upload.single("photo"), async (req, res) => {
+  const { user } = req;
   if (!req.file) {
     res.status(400).json({ error: "No photo provided." });
     return;
