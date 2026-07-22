@@ -64,10 +64,11 @@ router.get("/venues", requireAuth, async (req, res) => {
           circle: { center: { latitude: lat, longitude: lng }, radius: 5000 },
         },
       },
-      "places.displayName,places.formattedAddress"
+      "places.id,places.displayName,places.formattedAddress"
     );
 
     const venues = (data.places ?? []).map((place) => ({
+      id: place.id,
       name: place.displayName?.text ?? "Unknown",
       detail: place.formattedAddress ?? "",
     }));

@@ -5,13 +5,6 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useChatSocket } from "../../hooks/useChatSocket.js";
 import placeholderPhoto from "../../assets/img/1080x1920.png";
 
-// Still a mock - Phase 6 of the backend rewrite wires this to a real server-side Google Maps call (see architecture.md's "Planned: Chat" section).
-const MOCK_VENUES = [
-  { name: "Rye Diner", detail: "Cafe · 0.4 mi away" },
-  { name: "The Gateway", detail: "Shops & food · 1.2 mi away" },
-  { name: "Liberty Park", detail: "Park · 0.8 mi away" },
-];
-
 // A fresh match with no messages yet is "your turn" (the "you matched, say hi" state); otherwise it's your turn whenever the other person sent the most recent message - read from each match's precomputed lastMessage summary, not the full thread.
 function isYourTurn(match, currentUserId) {
   return !match.lastMessage || match.lastMessage.senderId !== currentUserId;
@@ -27,6 +20,9 @@ export default function Chat() {
   const [draft, setDraft] = useState("");
   const [showDatePlanner, setShowDatePlanner] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [venues, setVenues] = useState(null);
+  const [venuesLoading, setVenuesLoading] = useState(false);
+  const [venuesError, setVenuesError] = useState("");
   const threadEndRef = useRef(null);
 
   // Loads the match list once on mount.
@@ -103,6 +99,43 @@ export default function Chat() {
       .catch(() => setDraft(text));
   }
 
+  // Fetches venues once (lazily, on first open) and reuses them across matches/reopens - "nearby" is based on the current browser's location, not anything match-specific, so there's no reason to refetch per match. Errors leave `venues` null so the next open retries instead of getting stuck on a failure.
+  function loadVenues() {
+    if (venues || venuesLoading) return;
+    if (!navigator.geolocation) {
+      setVenuesError("Location isn't available in this browser.");
+      return;
+    }
+
+    setVenuesLoading(true);
+    setVenuesError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        fetch(`/api/venues?lat=${latitude}&lng=${longitude}`)
+          .then((response) => {
+            if (!response.ok) throw new Error("Failed to load venues.");
+            return response.json();
+          })
+          .then(setVenues)
+          .catch(() => setVenuesError("Couldn't load venue suggestions. Please try again."))
+          .finally(() => setVenuesLoading(false));
+      },
+      () => {
+        setVenuesError("Location permission denied. Enable it to see nearby venues.");
+        setVenuesLoading(false);
+      }
+    );
+  }
+
+  function toggleDatePlanner() {
+    setShowDatePlanner((prev) => {
+      const next = !prev;
+      if (next) loadVenues();
+      return next;
+    });
+  }
+
   // Only appends to a match's thread cache if it's already loaded - a push for a never-opened thread would otherwise create a cache entry containing just this one message, silently producing an incomplete thread once the user does open it. Always updates the list's lastMessage summary, and de-dupes by id to absorb the sender's own echo (server broadcasts to both match participants, not just "the other one").
   useChatSocket({
     enabled: !!user,
@@ -171,7 +204,7 @@ export default function Chat() {
               <button type="button" onClick={() => setShowProfile((prev) => !prev)}>
                 View profile
               </button>
-              <button type="button" onClick={() => setShowDatePlanner((prev) => !prev)}>
+              <button type="button" onClick={toggleDatePlanner}>
                 Plan a date
               </button>
             </div>
@@ -190,14 +223,20 @@ export default function Chat() {
 
             {showDatePlanner && (
               <div className="date-planner">
-                <p>Nearby venue suggestions (Google Maps placeholder):</p>
-                <ul>
-                  {MOCK_VENUES.map((venue) => (
-                    <li key={venue.name}>
-                      <strong>{venue.name}</strong> - {venue.detail}
-                    </li>
-                  ))}
-                </ul>
+                <p>Nearby venue suggestions:</p>
+                {venuesLoading && <p>Finding nearby places...</p>}
+                {venuesError && <p role="alert">{venuesError}</p>}
+                {venues && venues.length === 0 && <p>No nearby venues found.</p>}
+                {venues && venues.length > 0 && (
+                  <ul>
+                    {venues.map((venue, index) => (
+                      <li key={venue.id ?? index}>
+                        <strong>{venue.name}</strong>
+                        {venue.detail ? ` - ${venue.detail}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 
