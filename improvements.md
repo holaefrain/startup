@@ -124,3 +124,11 @@ In [server/index.js](server/index.js), `POST /api/signup` has no rate limiter, u
 `server/profile.js`'s `PATCH /api/profile` and `PATCH /api/profile/photo`, and `server/swipes.js`'s `POST /api/swipes` (added in Phases 2-3 of the backend rewrite) have the same gap. Lower urgency than signup/auth since all three require a valid session (abuse is bounded to registered accounts, not the open internet), but still worth covering for consistency - `POST /api/swipes` in particular could otherwise be hammered in a tight loop to spam-create matches.
 
 Add a limiter to all four matching the pattern already in `server/auth.js` (e.g. a shared or dedicated `rateLimit(...)` instance per route), tuned looser than the auth endpoints since a real user only hits these occasionally, not repeatedly in a tight loop.
+
+### Discover (and Chat's "View profile") must respect the per-field visibility toggle
+
+In [server/discover.js](server/discover.js), `DISCOVER_PROJECTION` is a single fixed field set returned for every profile, regardless of that user's own `visibility` map (`Profile.jsx`'s Visible/Hidden toggle, persisted via `PATCH /api/profile` in `server/profile.js`). This is `architecture.md`'s own documented "Current Limitations" gap ("nothing enforces it anywhere"), not something newly introduced - but it needs to actually be fixed, not just noted.
+
+Requirement: a field the user has marked "visible" (including the implicit default for a field they've never touched) is projected to other users; a field marked "hidden" is not - except the fields `Profile.jsx` locks regardless of the map (`first_name`/`last_name`/`age`/`height`/`location` always shown, `interested_in` never shown, `photoKeys` always included and not part of the toggle system at all).
+
+Being fixed as part of Phase 4 of the backend rewrite (see the plan file) - `server/userSchema.js` gets a shared `projectVisibleFields(user)` helper (derives which fields to include from `PROFILE_EDITABLE_FIELDS`/`VISIBILITY_FIELDS`, not a fourth hand-maintained list) used by both the `GET /api/discover` retrofit and the new `GET /api/matches`, so the fix lands in one place instead of being duplicated or missed in the new endpoint.
