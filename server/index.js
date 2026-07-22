@@ -1,4 +1,5 @@
 const path = require("path");
+const http = require("http");
 const express = require("express");
 const multer = require("multer");
 const cookieParser = require("cookie-parser");
@@ -12,6 +13,7 @@ const discoverRouter = require("./discover");
 const profileRouter = require("./profile");
 const swipesRouter = require("./swipes");
 const chatRouter = require("./chat");
+const { attachWebSocketServer } = require("./websocket");
 
 const MAX_PHOTOS = 8;
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8MB per photo
@@ -109,7 +111,11 @@ app.use((req, res) => {
   });
 });
 
+// http.createServer(app) instead of app.listen(...) directly, so attachWebSocketServer has a server instance to hook its own 'upgrade' handler onto before anything starts listening - app.listen() would have created one internally but never exposed it.
+const server = http.createServer(app);
+attachWebSocketServer(server);
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`API server listening on http://localhost:${PORT}`);
 });
