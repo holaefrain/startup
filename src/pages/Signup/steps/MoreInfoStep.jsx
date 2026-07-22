@@ -1,3 +1,5 @@
+import CityAutocompleteInput from "../../../components/CityAutocompleteInput.jsx";
+
 const HEIGHT_OPTIONS = Array.from({ length: 31 }, (_, index) => {
   const totalInches = 54 + index; // 4'6" to 7'0"
   const feet = Math.floor(totalInches / 12);
@@ -21,10 +23,9 @@ export default function MoreInfoStep({ formData, onChange, age, zodiacSign }) {
       </select>
 
       <label htmlFor="location">Location</label>
-      <input
+      <CityAutocompleteInput
         id="location"
         name="location"
-        type="text"
         placeholder="City, State"
         value={formData.location}
         onChange={onChange}
