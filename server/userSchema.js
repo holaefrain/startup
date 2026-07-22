@@ -103,6 +103,35 @@ const VISIBILITY_FIELDS = [
   "relationship_type",
 ];
 
+// interested_in is locked "Always Hidden" in Profile.jsx - never shown to other users regardless of the visibility map, so it's excluded from ALWAYS_VISIBLE_FIELDS below on purpose.
+const LOCKED_HIDDEN_FIELDS = ["interested_in"];
+
+// Derived, not hand-maintained, so it can't drift from PROFILE_EDITABLE_FIELDS/VISIBILITY_FIELDS - whatever's editable but not independently toggleable and not locked-hidden is always shown to other users (first_name, last_name, age, height, location).
+const ALWAYS_VISIBLE_FIELDS = PROFILE_EDITABLE_FIELDS.filter(
+  (field) => !VISIBILITY_FIELDS.includes(field) && !LOCKED_HIDDEN_FIELDS.includes(field)
+);
+
+// Mongo projection for "everything that could possibly be shown to another user" - built from PROFILE_EDITABLE_FIELDS (already excludes email/phone/birthday/password/token/registered) plus photoKeys and the raw visibility map, which projectVisibleFields below needs in order to decide what to keep.
+const PUBLIC_QUERY_PROJECTION = Object.fromEntries(
+  [...PROFILE_EDITABLE_FIELDS, "photoKeys", "visibility"].map((field) => [field, 1])
+);
+
+// Filters a raw user doc (fetched with PUBLIC_QUERY_PROJECTION) down to what's actually safe to show another user - ALWAYS_VISIBLE_FIELDS unconditionally, VISIBILITY_FIELDS only if not explicitly hidden (a field the user never touched defaults to visible, matching Profile.jsx's own assumption), photoKeys unconditionally. Never includes interested_in or the raw visibility map itself - another user doesn't need to know what you've hidden, just the result.
+function projectVisibleFields(user) {
+  const result = {};
+  for (const field of ALWAYS_VISIBLE_FIELDS) {
+    if (user[field] !== undefined) result[field] = user[field];
+  }
+  const visibility = user.visibility ?? {};
+  for (const field of VISIBILITY_FIELDS) {
+    if (visibility[field] !== "hidden" && user[field] !== undefined) {
+      result[field] = user[field];
+    }
+  }
+  result.photoKeys = user.photoKeys ?? [];
+  return result;
+}
+
 // Allow-list a request body against a known set of fields instead of spreading it directly into a Mongo insert, so a client can't smuggle arbitrary fields into the document.
 function pickFields(source, allowedFields) {
   const result = {};
@@ -114,4 +143,12 @@ function pickFields(source, allowedFields) {
   return result;
 }
 
-module.exports = { USER_FIELDS, PROFILE_EDITABLE_FIELDS, VISIBILITY_FIELDS, pickFields };
+module.exports = {
+  USER_FIELDS,
+  PROFILE_EDITABLE_FIELDS,
+  VISIBILITY_FIELDS,
+  ALWAYS_VISIBLE_FIELDS,
+  PUBLIC_QUERY_PROJECTION,
+  projectVisibleFields,
+  pickFields,
+};
