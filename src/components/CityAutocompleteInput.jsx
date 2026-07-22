@@ -12,6 +12,7 @@ export default function CityAutocompleteInput({
   onCommit,
   onBlur,
   onKeyDown,
+  onClick,
   placeholder,
   autoFocus,
 }) {
@@ -74,7 +75,7 @@ export default function CityAutocompleteInput({
   }
 
   return (
-    <div className="city-autocomplete" ref={containerRef}>
+    <div className="city-autocomplete" ref={containerRef} onClick={onClick}>
       <input
         id={id}
         name={name}

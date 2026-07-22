@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import CityAutocompleteInput from "../../components/CityAutocompleteInput.jsx";
 import placeholderPhoto from "../../assets/img/1080x1920.png";
+
+// These two fields get the city/region autocomplete instead of a plain text input.
+const CITY_AUTOCOMPLETE_FIELDS = new Set(["location", "hometown"]);
 
 const FIELD_GROUPS = [
   {
@@ -95,9 +99,10 @@ export default function Profile() {
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
-  function commitField(key) {
+  // overrideValue lets a caller commit a value that hasn't landed in `values` yet - selecting a CityAutocompleteInput suggestion calls this synchronously, before the onChange it also fired has actually applied its setValues update.
+  function commitField(key, overrideValue) {
     setEditingKey(null);
-    patchProfile({ fields: { [key]: values[key] } }).then((response) => response.ok && refreshUser());
+    patchProfile({ fields: { [key]: overrideValue ?? values[key] } }).then((response) => response.ok && refreshUser());
   }
 
   function toggleVisibility(key) {
@@ -147,14 +152,27 @@ export default function Profile() {
                     <button type="button" className="profile-field-main" onClick={() => setEditingKey(field.key)}>
                       <span className="profile-field-label">{field.label}</span>
                       {editingKey === field.key ? (
-                        <input
-                          autoFocus
-                          value={values[field.key]}
-                          onChange={(event) => handleFieldInput(field.key, event.target.value)}
-                          onBlur={() => commitField(field.key)}
-                          onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
-                          onClick={(event) => event.stopPropagation()}
-                        />
+                        CITY_AUTOCOMPLETE_FIELDS.has(field.key) ? (
+                          <CityAutocompleteInput
+                            autoFocus
+                            name={field.key}
+                            value={values[field.key]}
+                            onChange={(event) => handleFieldInput(field.key, event.target.value)}
+                            onBlur={() => commitField(field.key)}
+                            onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
+                            onCommit={(description) => commitField(field.key, description)}
+                            onClick={(event) => event.stopPropagation()}
+                          />
+                        ) : (
+                          <input
+                            autoFocus
+                            value={values[field.key]}
+                            onChange={(event) => handleFieldInput(field.key, event.target.value)}
+                            onBlur={() => commitField(field.key)}
+                            onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
+                            onClick={(event) => event.stopPropagation()}
+                          />
+                        )
                       ) : (
                         <span className="profile-field-value">{values[field.key] || "Add"}</span>
                       )}
