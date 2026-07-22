@@ -1,18 +1,7 @@
 const express = require("express");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser } = require("./authHelpers");
-
-// Basic-info-only projection: no email, phone, password, or token - this
-// feed is visible to any other logged-in user, not just the profile owner.
-const DISCOVER_PROJECTION = {
-  first_name: 1,
-  last_name: 1,
-  age: 1,
-  location: 1,
-  hometown: 1,
-  job_title: 1,
-  photoKeys: 1,
-};
+const { PUBLIC_QUERY_PROJECTION, projectVisibleFields } = require("./userSchema");
 
 const router = express.Router();
 
@@ -30,11 +19,11 @@ router.get("/discover", async (req, res) => {
     .collection("users")
     .find(
       { _id: { $nin: [...swipedIds, currentUser._id] }, registered: true },
-      { projection: DISCOVER_PROJECTION }
+      { projection: PUBLIC_QUERY_PROJECTION }
     )
     .toArray();
 
-  res.json(profiles.map(({ _id, ...profile }) => ({ id: _id.toString(), ...profile })));
+  res.json(profiles.map((profile) => ({ id: profile._id.toString(), ...projectVisibleFields(profile) })));
 });
 
 module.exports = router;
