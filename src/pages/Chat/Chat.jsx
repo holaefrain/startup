@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useChatSocket } from "../../hooks/useChatSocket.js";
 import placeholderPhoto from "../../assets/img/1080x1920.png";
 
 // Still a mock - Phase 6 of the backend rewrite wires this to a real server-side Google Maps call (see architecture.md's "Planned: Chat" section).
@@ -101,6 +102,25 @@ export default function Chat() {
       })
       .catch(() => setDraft(text));
   }
+
+  // Only appends to a match's thread cache if it's already loaded - a push for a never-opened thread would otherwise create a cache entry containing just this one message, silently producing an incomplete thread once the user does open it. Always updates the list's lastMessage summary, and de-dupes by id to absorb the sender's own echo (server broadcasts to both match participants, not just "the other one").
+  useChatSocket({
+    enabled: !!user,
+    onMessage: (matchId, message) => {
+      setMessagesByMatch((prev) => {
+        const existing = prev[matchId];
+        if (!existing || existing.some((m) => m.id === message.id)) return prev;
+        return { ...prev, [matchId]: [...existing, message] };
+      });
+      setMatches((prev) =>
+        prev?.map((match) =>
+          match.id === matchId
+            ? { ...match, lastMessage: { senderId: message.senderId, text: message.text, createdAt: message.createdAt } }
+            : match
+        ) ?? prev
+      );
+    },
+  });
 
   return (
     <div id="chat">
