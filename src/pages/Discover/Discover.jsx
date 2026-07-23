@@ -3,21 +3,35 @@ import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
 import placeholderPhoto from "../../assets/img/1920x1080.png";
 
+const DISCOVER_MODE_KEY = "debrief:discoverMode";
+
 export default function Discover() {
+  const [mode, setMode] = useState(() => localStorage.getItem(DISCOVER_MODE_KEY) || "production");
   const [profiles, setProfiles] = useState(null);
   const [index, setIndex] = useState(0);
   const [error, setError] = useState("");
   const [matchNotice, setMatchNotice] = useState(null);
 
+  // Refetches whenever mode changes, resetting everything first - the profile list, swipe index, and any stale error/match state from the previous mode would otherwise carry over into a completely different data set.
   useEffect(() => {
-    fetch("/api/discover")
+    setProfiles(null);
+    setIndex(0);
+    setError("");
+    setMatchNotice(null);
+    fetch(`/api/discover?mode=${mode}`)
       .then((response) => {
         if (!response.ok) throw new Error("Failed to load profiles.");
         return response.json();
       })
       .then(setProfiles)
       .catch(() => setError("Couldn't load profiles. Please try again."));
-  }, []);
+  }, [mode]);
+
+  function toggleMode() {
+    const next = mode === "demo" ? "production" : "demo";
+    localStorage.setItem(DISCOVER_MODE_KEY, next);
+    setMode(next);
+  }
 
   const profile = profiles?.[index];
 
