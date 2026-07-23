@@ -546,33 +546,70 @@ form button,
   text-align: center;
 }
 
-.profile-photo-wrap {
-  position: relative;
-  width: 8rem;
-  height: 8rem;
+.profile-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 32rem;
 }
 
-.profile-photo-avatar {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--color-accent);
+.profile-photo-tile {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--radius-control);
   background: #e9e9e9;
 }
 
-.profile-photo-edit {
+.profile-photo-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-photo-remove {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 0.35rem;
+  right: 0.35rem;
   display: grid;
-  width: 2rem;
-  height: 2rem;
+  width: 1.75rem;
+  height: 1.75rem;
   place-items: center;
+  border: none;
   border-radius: 50%;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgb(0 0 0 / 65%);
+  color: #ffffff;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.profile-photo-remove:hover {
+  background: rgb(0 0 0 / 85%);
+}
+
+.profile-photo-add {
+  display: grid;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-control);
+  color: var(--color-muted);
+  font-weight: 800;
+  text-align: center;
   cursor: pointer;
+}
+
+.profile-photo-add:hover {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
+.profile-photo-error {
+  margin: 0;
+  color: #b3261e;
+  font-size: 0.9rem;
 }
 
 .profile-name {

@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import CityAutocompleteInput from "../../components/CityAutocompleteInput.jsx";
 import OptionSelect, { FIELD_OPTIONS, optionLabel } from "../../components/OptionSelect.jsx";
 import { PROFILE_FIELD_GROUPS, ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
-import placeholderPhoto from "../../assets/img/1080x1920.png";
 
 // These two fields get the city/region autocomplete instead of a plain text input.
 const CITY_AUTOCOMPLETE_FIELDS = new Set(["location", "hometown"]);
+// Matches server/profile.js's MAX_PHOTOS, which itself matches server/index.js's signup upload cap.
+const MAX_PHOTOS = 8;
 
 function patchProfile(body) {
   return fetch("/api/profile", {
@@ -27,7 +28,9 @@ export default function Profile() {
   const [values, setValues] = useState(null);
   const [visibility, setVisibility] = useState({});
   const [editingKey, setEditingKey] = useState(null);
-  const [photoFile, setPhotoFile] = useState(null);
+  const [addingPhoto, setAddingPhoto] = useState(false);
+  const [removingIndex, setRemovingIndex] = useState(null);
+  const [photoError, setPhotoError] = useState("");
 
   useEffect(() => {
     if (!user || values !== null) return;
@@ -39,19 +42,34 @@ export default function Profile() {
     setVisibility(user.visibility ?? {});
   }, [user, values]);
 
-  const photoPreviewUrl = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile]);
-  useEffect(() => {
-    return () => photoPreviewUrl && URL.revokeObjectURL(photoPreviewUrl);
-  }, [photoPreviewUrl]);
-
-  function handlePhotoChange(event) {
+  function handleAddPhoto(event) {
     const file = event.target.files[0] ?? null;
-    setPhotoFile(file);
+    event.target.value = ""; // lets the same file be picked again later (e.g. after removing it)
     if (!file) return;
 
+    setPhotoError("");
+    setAddingPhoto(true);
     const body = new FormData();
     body.append("photo", file);
-    fetch("/api/profile/photo", { method: "PATCH", body }).then((response) => response.ok && refreshUser());
+    fetch("/api/profile/photo", { method: "POST", body })
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to add photo.");
+        return refreshUser();
+      })
+      .catch(() => setPhotoError("Couldn't add photo. Please try again."))
+      .finally(() => setAddingPhoto(false));
+  }
+
+  function handleRemovePhoto(index) {
+    setPhotoError("");
+    setRemovingIndex(index);
+    fetch(`/api/profile/photo/${index}`, { method: "DELETE" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to remove photo.");
+        return refreshUser();
+      })
+      .catch(() => setPhotoError("Couldn't remove photo. Please try again."))
+      .finally(() => setRemovingIndex(null));
   }
 
   function handleFieldInput(key, value) {
@@ -86,13 +104,33 @@ export default function Profile() {
 
       <main>
         <section className="profile-header">
-          <div className="profile-photo-wrap">
-            <img className="profile-photo-avatar" src={photoPreviewUrl ?? placeholderPhoto} alt="" />
-            <label className="profile-photo-edit" htmlFor="profile-photo-input" aria-label="Edit profile photo">
-              &#9998;
-            </label>
-            <input id="profile-photo-input" type="file" accept="image/*" onChange={handlePhotoChange} hidden />
+          <div className="profile-photo-grid">
+            {(user?.photoKeys ?? []).map((_, index) => (
+              <div key={index} className="profile-photo-tile">
+                <img src={`/api/photos/${user.id}/${index}`} alt={`Photo ${index + 1}`} />
+                <button
+                  type="button"
+                  className="profile-photo-remove"
+                  aria-label={`Remove photo ${index + 1}`}
+                  onClick={() => handleRemovePhoto(index)}
+                  disabled={removingIndex === index}
+                >
+                  &#10005;
+                </button>
+              </div>
+            ))}
+            {(user?.photoKeys?.length ?? 0) < MAX_PHOTOS && (
+              <label className="profile-photo-add" htmlFor="profile-photo-input">
+                {addingPhoto ? "Adding..." : "+ Add Photo"}
+              </label>
+            )}
+            <input id="profile-photo-input" type="file" accept="image/*" onChange={handleAddPhoto} hidden />
           </div>
+          {photoError && (
+            <p role="alert" className="profile-photo-error">
+              {photoError}
+            </p>
+          )}
           {values && (
             <h2 className="profile-name">
               {values.first_name} {values.last_name}
