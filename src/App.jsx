@@ -6,6 +6,7 @@ import Chat from "./pages/Chat/Chat.jsx";
 import Profile from "./pages/Profile/Profile.jsx";
 import Footer from "./components/Footer.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { DiscoverModeProvider } from "./context/DiscoverModeContext.jsx";
 import ProtectedRoute from "./context/ProtectedRoute.jsx";
 import "./App.css";
 
@@ -27,42 +28,44 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route
-            path="/discover"
-            element={
-              <ProtectedRoute>
-                <Discover />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <Chat />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/liked"
-            element={
-              <ProtectedRoute>
-                <PlaceholderPage title="Liked me" />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
+        <DiscoverModeProvider>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route
+              path="/discover"
+              element={
+                <ProtectedRoute>
+                  <Discover />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <Chat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/liked"
+              element={
+                <ProtectedRoute>
+                  <PlaceholderPage title="Liked me" />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </DiscoverModeProvider>
       </AuthProvider>
     </BrowserRouter>
   );
