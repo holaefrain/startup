@@ -601,8 +601,7 @@ form button,
 .profile-meta {
   flex: 39 3 20rem;
   min-width: 0;
-  padding: 1.5rem;
-  /* margin-right: 5rem; */
+  padding-left: clamp(1.5rem, 8vw, 6rem);
 }
 
 .profile-field-panel {
