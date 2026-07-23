@@ -270,6 +270,11 @@
   line-height: 1.7;
 }
 
+.login-trigger {
+  position: relative;
+}
+
+.nav-cta.hidden,
 .login-overlay.hidden,
 .login-dropdown.hidden,
 .login-message.hidden {
@@ -280,34 +285,19 @@
   position: fixed;
   inset: 0;
   z-index: 10;
-  background: rgb(0 0 0 / 42%);
 }
 
 .login-dropdown {
-  position: fixed;
-  top: 50%;
-  left: 50%;
+  position: absolute;
+  top: 0;
+  right: 0;
   z-index: 11;
   width: min(92vw, 28rem);
   padding: 2rem;
-  transform: translate(-50%, -50%);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
   background: var(--color-surface);
   box-shadow: var(--shadow-panel);
-}
-
-.close-btn {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  display: inline-grid;
-  width: 2.25rem;
-  height: 2.25rem;
-  place-items: center;
-  padding: 0;
-  border-radius: 50%;
-  font-size: 1.4rem;
 }
 
 @media (max-width: 760px) {

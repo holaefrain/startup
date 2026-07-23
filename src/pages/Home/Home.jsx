@@ -81,59 +81,58 @@ export default function Home() {
       <nav id="main-nav">
         <div className="nav-content">
           <h2 className="nav-bar-quote">TIRED OF DATING? LET'S AIR IT OUT</h2>
-          <button
-            className="nav-cta"
-            id="login-button"
-            type="button"
-            aria-controls="loginDropdown"
-            aria-expanded={isLoginOpen}
-            onClick={openLogin}
-          >
-            LOGIN/SIGN UP
-          </button>
+          <div className="login-trigger">
+            <button
+              className={`nav-cta${showModal ? " hidden" : ""}`}
+              id="login-button"
+              type="button"
+              aria-controls="loginDropdown"
+              aria-expanded={isLoginOpen}
+              onClick={openLogin}
+            >
+              LOGIN/SIGN UP
+            </button>
+
+            {/* Login Overlay */}
+            <button
+              ref={overlayRef}
+              className={`login-overlay${showModal ? "" : " hidden"}`}
+              id="loginOverlay"
+              type="button"
+              aria-label="Close login form"
+              onClick={closeLogin}
+            ></button>
+
+            <div
+              ref={dropdownRef}
+              className={`login-dropdown${showModal ? "" : " hidden"}`}
+              id="loginDropdown"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="loginTitle"
+            >
+              <h2 id="loginTitle">Login to Debrief</h2>
+              <form id="loginForm" onSubmit={handleLoginSubmit}>
+                <label htmlFor="email">Email</label>
+                <input id="email" type="email" name="email" required placeholder="you@example.com" />
+
+                <label htmlFor="password">Password</label>
+                <input id="password" type="password" name="password" required placeholder="Enter your password" />
+
+                <button type="submit" className="submit-btn">
+                  Log in
+                </button>
+                <p className="signup-line">
+                  Don't have an account? <Link to="/signup">Sign up</Link>
+                </p>
+                <p className={`login-message${loginError ? "" : " hidden"}`} id="loginMessage" role="alert">
+                  {loginError}
+                </p>
+              </form>
+            </div>
+          </div>
         </div>
       </nav>
-
-      {/* Login Overlay */}
-      <button
-        ref={overlayRef}
-        className={`login-overlay${showModal ? "" : " hidden"}`}
-        id="loginOverlay"
-        type="button"
-        aria-label="Close login form"
-        onClick={closeLogin}
-      ></button>
-
-      <div
-        ref={dropdownRef}
-        className={`login-dropdown${showModal ? "" : " hidden"}`}
-        id="loginDropdown"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="loginTitle"
-      >
-        <button className="close-btn" id="loginClose" type="button" aria-label="Close login form" onClick={closeLogin}>
-          ×
-        </button>
-        <h2 id="loginTitle">Login to Debrief</h2>
-        <form id="loginForm" onSubmit={handleLoginSubmit}>
-          <label htmlFor="email">Email</label>
-          <input id="email" type="email" name="email" required placeholder="you@example.com" />
-
-          <label htmlFor="password">Password</label>
-          <input id="password" type="password" name="password" required placeholder="Enter your password" />
-
-          <button type="submit" className="submit-btn">
-            Log in
-          </button>
-          <p className="signup-line">
-            Don't have an account? <Link to="/signup">Sign up</Link>
-          </p>
-          <p className={`login-message${loginError ? "" : " hidden"}`} id="loginMessage" role="alert">
-            {loginError}
-          </p>
-        </form>
-      </div>
 
       <PinnedScrollStage sections={sections} />
 
