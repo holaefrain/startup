@@ -8,6 +8,14 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import sections from "./sections/index.js";
 import "./Home.css";
 
+function SendIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M4 12 H20 M14 6 L20 12 L14 18" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -111,17 +119,21 @@ export default function Home() {
               aria-modal="true"
               aria-labelledby="loginTitle"
             >
+              <button className="close-btn" id="loginClose" type="button" aria-label="Close login form" onClick={closeLogin}>
+                ×
+              </button>
               <h2 id="loginTitle">Login/Sign up</h2>
               <form id="loginForm" onSubmit={handleLoginSubmit}>
                 <label htmlFor="email">Email</label>
                 <input id="email" type="email" name="email" required placeholder="you@example.com" />
 
                 <label htmlFor="password">Password</label>
-                <input id="password" type="password" name="password" required placeholder="Enter your password" />
-
-                <button type="submit" className="submit-btn">
-                  Log in
-                </button>
+                <div className="password-row">
+                  <input id="password" type="password" name="password" required placeholder="Enter your password" />
+                  <button type="submit" className="login-submit" aria-label="Log in">
+                    <SendIcon />
+                  </button>
+                </div>
                 <p className="signup-line">
                   Don't have an account? <Link to="/signup">Sign up</Link>
                 </p>

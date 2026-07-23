@@ -300,6 +300,58 @@
   box-shadow: var(--shadow-panel);
 }
 
+.password-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.password-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.login-submit {
+  display: grid;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #22c55e;
+  color: var(--color-surface);
+  font-size: 1.15rem;
+}
+
+.login-submit:hover {
+  background: #16a34a;
+  border-color: transparent;
+}
+
+.close-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-surface);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  background: rgb(255 255 255 / 12%);
+  border-color: transparent;
+}
+
 #loginTitle {
   margin: 0 0 1.25rem;
   text-align: center;

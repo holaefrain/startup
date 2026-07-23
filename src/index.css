@@ -599,9 +599,10 @@ form button,
 }
 
 .profile-meta {
-  flex: 39 1 20rem;
+  flex: 39 3 20rem;
   min-width: 0;
   padding: 1.5rem;
+  /* margin-right: 5rem; */
 }
 
 .profile-field-panel {
