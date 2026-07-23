@@ -11,26 +11,43 @@ export default function Discover() {
   const [index, setIndex] = useState(0);
   const [error, setError] = useState("");
   const [matchNotice, setMatchNotice] = useState(null);
+  const [resetting, setResetting] = useState(false);
 
-  // Refetches whenever mode changes, resetting everything first - the profile list, swipe index, and any stale error/match state from the previous mode would otherwise carry over into a completely different data set.
-  useEffect(() => {
+  // Resets everything first - the profile list, swipe index, and any stale error/match state from a previous load would otherwise carry over into a completely different data set - then fetches. Shared by the mode-change effect below and the "Reset Demo Mode" button.
+  function loadProfiles(forMode) {
     setProfiles(null);
     setIndex(0);
     setError("");
     setMatchNotice(null);
-    fetch(`/api/discover?mode=${mode}`)
+    fetch(`/api/discover?mode=${forMode}`)
       .then((response) => {
         if (!response.ok) throw new Error("Failed to load profiles.");
         return response.json();
       })
       .then(setProfiles)
       .catch(() => setError("Couldn't load profiles. Please try again."));
+  }
+
+  useEffect(() => {
+    loadProfiles(mode);
   }, [mode]);
 
   function toggleMode() {
     const next = mode === "demo" ? "production" : "demo";
     localStorage.setItem(DISCOVER_MODE_KEY, next);
     setMode(next);
+  }
+
+  // Clears this account's swipes/matches/messages with seed users specifically (never touches real relationships), then reloads the demo deck from a clean slate.
+  function resetDemoMode() {
+    setResetting(true);
+    fetch("/api/discover/reset-demo", { method: "POST" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to reset demo mode.");
+        loadProfiles(mode);
+      })
+      .catch(() => setError("Couldn't reset demo mode. Please try again."))
+      .finally(() => setResetting(false));
   }
 
   const profile = profiles?.[index];
@@ -61,6 +78,11 @@ export default function Discover() {
         <button type="button" className="mode-toggle" onClick={toggleMode}>
           {mode === "demo" ? "Viewing demo profiles - switch to real" : "Viewing real profiles - switch to demo"}
         </button>
+        {mode === "demo" && (
+          <button type="button" className="reset-demo" onClick={resetDemoMode} disabled={resetting}>
+            {resetting ? "Resetting..." : "Reset Demo Mode"}
+          </button>
+        )}
         <AppNav />
       </header>
 
