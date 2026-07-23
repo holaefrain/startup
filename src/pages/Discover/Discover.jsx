@@ -6,9 +6,37 @@ import { ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
 import { useDiscoverMode } from "../../context/DiscoverModeContext.jsx";
 import placeholderPhoto from "../../assets/img/1920x1080.png";
 
-// Already shown elsewhere on the card (name/age header, or the icon quick-facts row once that lands in 5c), so skipped when rendering the field table below.
-const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age"]);
+// Already shown elsewhere on the card - name (h2), age/height/location (icon row), gender/pronouns (subtitle line) - so skipped when rendering the field table below.
+const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns"]);
 const FIELD_SCROLL_STEP = 120; // px per chevron click, roughly two table rows
+
+function AgeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <path d="M12 3 L19 20 L5 20 Z" strokeLinejoin="round" />
+      <circle cx="12" cy="3" r="1.4" fill="currentColor" stroke="none" />
+      <path d="M5 20 H19" />
+    </svg>
+  );
+}
+
+function HeightIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <rect x="9" y="2" width="6" height="20" rx="1" />
+      <path d="M9 6 H12 M9 10 H13 M9 14 H12 M9 18 H13" />
+    </svg>
+  );
+}
+
+function LocationIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+      <path d="M12 21s7-7.58 7-12a7 7 0 1 0-14 0c0 4.42 7 12 7 12Z" strokeLinejoin="round" />
+      <circle cx="12" cy="9" r="2.3" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
 export default function Discover() {
   const { mode, resetVersion } = useDiscoverMode();
@@ -38,6 +66,21 @@ export default function Discover() {
   }, [mode, resetVersion]);
 
   const profile = profiles?.[index];
+
+  // Gender/pronouns read as one italicized line rather than table rows - only the ones the profile actually has are joined, so a profile missing one doesn't leave a dangling separator.
+  const subtitleParts = profile
+    ? [profile.gender && optionLabel("gender", profile.gender), profile.pronouns && optionLabel("pronouns", profile.pronouns)].filter(
+        Boolean
+      )
+    : [];
+
+  const iconFacts = profile
+    ? [
+        profile.age != null && { key: "age", icon: <AgeIcon />, value: profile.age },
+        profile.height && { key: "height", icon: <HeightIcon />, value: optionLabel("height", profile.height) },
+        profile.location && { key: "location", icon: <LocationIcon />, value: profile.location },
+      ].filter(Boolean)
+    : [];
 
   // The field table's scroll container is the same DOM node across swipes (React just updates its contents), so without this a scroll position left on one profile would carry into the next.
   useEffect(() => {
@@ -89,19 +132,23 @@ export default function Discover() {
 
           {profile && (
             <article className="profile-card" data-profile-id={profile.id}>
-              <div className="profile-photos">
-                <img
-                  className="photo-placeholder"
-                  src={placeholderPhoto}
-                  alt={`${profile.first_name} ${profile.last_name}`}
-                />
-              </div>
-
               <div className="profile-meta">
                 <h2 className="profile-name">
                   {profile.first_name} {profile.last_name}
-                  {profile.age != null ? `, ${profile.age}` : ""}
                 </h2>
+
+                {subtitleParts.length > 0 && <p className="profile-subtitle">{subtitleParts.join(" | ")}</p>}
+
+                {iconFacts.length > 0 && (
+                  <ul className="profile-icon-facts">
+                    {iconFacts.map((fact) => (
+                      <li key={fact.key}>
+                        {fact.icon}
+                        <span>{fact.value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
                 <div className="profile-field-panel">
                   <div className="profile-field-table-wrap" ref={fieldTableRef}>
@@ -127,6 +174,14 @@ export default function Discover() {
                     </button>
                   </div>
                 </div>
+              </div>
+
+              <div className="profile-photos">
+                <img
+                  className="photo-placeholder"
+                  src={placeholderPhoto}
+                  alt={`${profile.first_name} ${profile.last_name}`}
+                />
               </div>
             </article>
           )}

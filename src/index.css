@@ -358,9 +358,54 @@ form button,
 }
 
 .profile-card {
+  display: flex;
+  flex-wrap: wrap;
   overflow: hidden;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
+}
+
+.profile-card .profile-name {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.profile-subtitle {
+  margin: 0.5rem 0 0;
+  font-size: 1.1rem;
+  font-style: italic;
+}
+
+.profile-icon-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-icon-facts li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+}
+
+.profile-icon-facts svg {
+  flex-shrink: 0;
+}
+
+.profile-photos {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.profile-photos .photo-placeholder {
+  height: 100%;
+  min-height: 100%;
 }
 
 .photo-preview {
@@ -383,7 +428,9 @@ form button,
 }
 
 .profile-meta {
-  padding: 1.25rem;
+  flex: 1 1 20rem;
+  min-width: 0;
+  padding: 1.5rem;
 }
 
 .profile-field-panel {
