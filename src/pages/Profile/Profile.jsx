@@ -3,6 +3,7 @@ import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import CityAutocompleteInput from "../../components/CityAutocompleteInput.jsx";
+import OptionSelect, { FIELD_OPTIONS, optionLabel } from "../../components/OptionSelect.jsx";
 import placeholderPhoto from "../../assets/img/1080x1920.png";
 
 // These two fields get the city/region autocomplete instead of a plain text input.
@@ -163,6 +164,19 @@ export default function Profile() {
                             onCommit={(description) => commitField(field.key, description)}
                             onClick={(event) => event.stopPropagation()}
                           />
+                        ) : FIELD_OPTIONS[field.key] ? (
+                          <OptionSelect
+                            field={field.key}
+                            placeholder={`Select ${field.label}`}
+                            autoFocus
+                            value={values[field.key]}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              handleFieldInput(field.key, value);
+                              commitField(field.key, value);
+                            }}
+                            onClick={(event) => event.stopPropagation()}
+                          />
                         ) : (
                           <input
                             autoFocus
@@ -174,7 +188,7 @@ export default function Profile() {
                           />
                         )
                       ) : (
-                        <span className="profile-field-value">{values[field.key] || "Add"}</span>
+                        <span className="profile-field-value">{optionLabel(field.key, values[field.key]) || "Add"}</span>
                       )}
                     </button>
                     <button
