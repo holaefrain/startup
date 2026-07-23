@@ -6,15 +6,17 @@ const { s3Client, bucketName } = require("./s3Client");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser } = require("./authHelpers");
 const { PROFILE_EDITABLE_FIELDS, VISIBILITY_FIELDS, pickFields } = require("./userSchema");
+const { SAFE_IMAGE_CONTENT_TYPES } = require("./imageTypes");
 
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8MB, matches server/index.js's signup upload limit
+const MAX_PHOTOS = 8; // matches server/index.js's signup upload cap
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_SIZE_BYTES, files: 1 },
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) {
-      const error = new Error("Only image files are allowed.");
+    if (!SAFE_IMAGE_CONTENT_TYPES.has(file.mimetype)) {
+      const error = new Error("Only JPEG, PNG, WEBP, or GIF images are allowed.");
       error.status = 400;
       cb(error);
       return;
@@ -71,30 +73,49 @@ router.patch("/profile", requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
-// Deleting the previous avatar before uploading the new one is safe here specifically because both the read and the delete are scoped to the authenticated user's own _id from their session token, never a client-supplied identity - unlike the account-takeover bug this same pattern caused in an earlier version of POST /api/signup, which read/deleted someone else's key based on an unauthenticated email match.
-router.patch("/profile/photo", requireAuth, upload.single("photo"), async (req, res) => {
+// Appends to the end of photoKeys (capped at MAX_PHOTOS) rather than overwriting a slot - matches the array server/index.js's signup handler already builds, so photos added post-signup use the same key scheme (photos/<userId>/<n><ext>).
+router.post("/profile/photo", requireAuth, upload.single("photo"), async (req, res) => {
   const { user } = req;
   if (!req.file) {
     res.status(400).json({ error: "No photo provided." });
     return;
   }
 
-  const db = await getDb();
-  const users = db.collection("users");
-
-  const existingKey = user.photoKeys?.[0];
-  if (existingKey) {
-    await s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: existingKey }));
+  const existingKeys = user.photoKeys ?? [];
+  if (existingKeys.length >= MAX_PHOTOS) {
+    res.status(400).json({ error: `You can have up to ${MAX_PHOTOS} photos.` });
+    return;
   }
 
   const extension = path.extname(req.file.originalname) || "";
-  const key = `photos/${user._id}/1${extension}`;
+  const key = `photos/${user._id}/${existingKeys.length + 1}${extension}`;
   await s3Client.send(
     new PutObjectCommand({ Bucket: bucketName, Key: key, Body: req.file.buffer, ContentType: req.file.mimetype })
   );
 
-  const photoKeys = [key, ...(user.photoKeys ?? []).slice(1)];
-  await users.updateOne({ _id: user._id }, { $set: { photoKeys } });
+  const photoKeys = [...existingKeys, key];
+  const db = await getDb();
+  await db.collection("users").updateOne({ _id: user._id }, { $set: { photoKeys } });
+
+  res.json({ photoKeys });
+});
+
+// Deletion is scoped to the authenticated user's own _id from their session token, never a client-supplied identity - same account-takeover-avoidance pattern as the rest of this file.
+router.delete("/profile/photo/:index", requireAuth, async (req, res) => {
+  const { user } = req;
+  const index = Number(req.params.index);
+  const existingKeys = user.photoKeys ?? [];
+  const key = existingKeys[index];
+  if (key === undefined) {
+    res.status(404).json({ error: "Photo not found." });
+    return;
+  }
+
+  await s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
+
+  const photoKeys = existingKeys.filter((_, i) => i !== index);
+  const db = await getDb();
+  await db.collection("users").updateOne({ _id: user._id }, { $set: { photoKeys } });
 
   res.json({ photoKeys });
 });
