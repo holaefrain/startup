@@ -3,56 +3,33 @@ import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
 import { PROFILE_FIELD_GROUPS } from "../../constants/profileFields.js";
+import { useDiscoverMode } from "../../context/DiscoverModeContext.jsx";
 import placeholderPhoto from "../../assets/img/1920x1080.png";
 
-const DISCOVER_MODE_KEY = "debrief:discoverMode";
 // Already shown in the card's name/age header, so skipped when rendering the rest of the profile fields below.
 const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age"]);
 
 export default function Discover() {
-  const [mode, setMode] = useState(() => localStorage.getItem(DISCOVER_MODE_KEY) || "production");
+  const { mode, resetVersion } = useDiscoverMode();
   const [profiles, setProfiles] = useState(null);
   const [index, setIndex] = useState(0);
   const [error, setError] = useState("");
   const [matchNotice, setMatchNotice] = useState(null);
-  const [resetting, setResetting] = useState(false);
 
-  // Resets everything first - the profile list, swipe index, and any stale error/match state from a previous load would otherwise carry over into a completely different data set - then fetches. Shared by the mode-change effect below and the "Reset Demo Mode" button.
-  function loadProfiles(forMode) {
+  useEffect(() => {
+    // Resets everything first - the profile list, swipe index, and any stale error/match state from a previous load would otherwise carry over into a completely different data set - then fetches. Re-runs on `mode` (AppNav's real/demo switch) and on `resetVersion` (bumped by a reset-demo call even when `mode` itself doesn't change, e.g. AppNav's "Reset Demo Mode" link while staying in demo).
     setProfiles(null);
     setIndex(0);
     setError("");
     setMatchNotice(null);
-    fetch(`/api/discover?mode=${forMode}`)
+    fetch(`/api/discover?mode=${mode}`)
       .then((response) => {
         if (!response.ok) throw new Error("Failed to load profiles.");
         return response.json();
       })
       .then(setProfiles)
       .catch(() => setError("Couldn't load profiles. Please try again."));
-  }
-
-  useEffect(() => {
-    loadProfiles(mode);
-  }, [mode]);
-
-  function toggleMode() {
-    const next = mode === "demo" ? "production" : "demo";
-    localStorage.setItem(DISCOVER_MODE_KEY, next);
-    setMode(next);
-  }
-
-  // Clears this account's swipes/matches/messages with seed users specifically (never touches real relationships), then reloads the demo deck from a clean slate.
-  function resetDemoMode() {
-    setResetting(true);
-    fetch("/api/discover/reset-demo", { method: "POST" })
-      .then((response) => {
-        if (!response.ok) throw new Error("Failed to reset demo mode.");
-        loadProfiles(mode);
-      })
-      .catch(() => setError("Couldn't reset demo mode. Please try again."))
-      .finally(() => setResetting(false));
-  }
+  }, [mode, resetVersion]);
 
   const profile = profiles?.[index];
 
@@ -79,14 +56,6 @@ export default function Discover() {
       <header>
         <h1>Discover</h1>
         <p>Swipe through profiles. Tap the heart or X to like or pass.</p>
-        <button type="button" className="mode-toggle" onClick={toggleMode}>
-          {mode === "demo" ? "Viewing demo profiles - switch to real" : "Viewing real profiles - switch to demo"}
-        </button>
-        {mode === "demo" && (
-          <button type="button" className="reset-demo" onClick={resetDemoMode} disabled={resetting}>
-            {resetting ? "Resetting..." : "Reset Demo Mode"}
-          </button>
-        )}
         <AppNav />
       </header>
 
@@ -145,16 +114,6 @@ export default function Discover() {
               </div>
             </article>
           )}
-        </section>
-
-        <section className="venue-placeholder">
-          <h2>Date ideas nearby</h2>
-          <p>Third-party API placeholder: Google Maps venue suggestions will appear here.</p>
-        </section>
-
-        <section className="notifications" aria-live="polite">
-          <h2>Notifications</h2>
-          <p>WebSocket placeholder: waiting for new matches, chats, and date proposals...</p>
         </section>
 
         <section className="controls">
