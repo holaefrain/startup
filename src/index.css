@@ -21,6 +21,7 @@
   --color-border: #dedede;
   --color-accent: #0f766e;
   --color-accent-strong: #115e59;
+  --color-nav: #3f7a68;
   --radius-control: 0.5rem;
   --radius-panel: 0.5rem;
   --shadow-panel: 0 1.5rem 4rem rgb(0 0 0 / 14%);
@@ -163,31 +164,180 @@ form button,
   padding: 0.7rem 1rem;
 }
 
-.app-nav ul {
+.app-nav-toggle {
+  position: fixed;
+  top: 1.5rem;
+  left: 1.5rem;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.app-nav-toggle:hover {
+  border-color: transparent;
+  background: rgb(0 0 0 / 6%);
+  color: var(--color-text);
+}
+
+.app-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgb(0 0 0 / 35%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-nav-backdrop-open {
+  pointer-events: auto;
+}
+
+.app-nav {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 58;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin: 1rem 0 0;
+  flex-direction: column;
+  gap: 2rem;
+  width: min(85vw, 22rem);
+  padding: 5rem 1.75rem 2rem;
+  background: var(--color-nav);
+  color: #050505;
+  transform: translateX(-100%);
+  overflow-y: auto;
+}
+
+.app-nav-links {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.app-nav a {
-  display: inline-flex;
-  min-height: 2.5rem;
-  align-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  padding: 0.45rem 0.9rem;
-  background: var(--color-surface);
+.app-nav-links a {
+  display: block;
+  font-size: 2.25rem;
+  font-weight: 900;
+  line-height: 1.2;
+  color: #050505;
   text-decoration: none;
 }
 
-.app-nav a.active,
-.app-nav a:hover {
-  border-color: var(--color-text);
-  background: var(--color-text);
-  color: var(--color-surface);
+.app-nav-links a.active {
+  color: #ffffff;
+}
+
+.app-nav-mode {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.app-nav-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #050505;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.app-nav-mode-toggle:hover {
+  background: transparent;
+  color: #050505;
+}
+
+.app-nav-mode-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.app-nav-mode-track {
+  position: relative;
+  width: 2.75rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 25%);
+  transition: background 0.2s ease;
+}
+
+.app-nav-mode-toggle[aria-checked="true"] .app-nav-mode-track {
+  background: #050505;
+}
+
+.app-nav-mode-knob {
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.2s ease;
+}
+
+.app-nav-mode-toggle[aria-checked="true"] .app-nav-mode-knob {
+  transform: translateX(1.25rem);
+}
+
+.app-nav-reset-demo {
+  justify-self: start;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #050505;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.app-nav-reset-demo:hover {
+  background: transparent;
+  color: #ffffff;
+}
+
+.app-nav-bottom {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.app-nav-settings {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #050505;
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-decoration: none;
+}
+
+.app-nav-logout {
+  border: none;
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  background: #050505;
+  color: #ffffff;
+  font-weight: 800;
+  text-align: center;
+}
+
+.app-nav-logout:hover {
+  background: #050505;
+  opacity: 0.85;
 }
 
 #discover main,
