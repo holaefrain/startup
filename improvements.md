@@ -38,3 +38,15 @@ if (candidates.some((doc) => doc.password)) {
 ```
 
 Add a projection (e.g. `{ password: 1 }`) to this query so only the field actually needed is transferred from MongoDB, instead of the full user document for every candidate.
+
+## No dedicated mobile layout for the redesigned Discover/AppNav
+
+The Discover page redesign ([src/pages/Discover/Discover.jsx](src/pages/Discover/Discover.jsx), [src/components/AppNav.jsx](src/components/AppNav.jsx), [src/index.css](src/index.css)) was built against desktop reference mocks - the two-column profile card, the fixed-height (`56rem`) photo carousel, and the absolute-positioned floating like/dislike buttons all assume a wide viewport. `.profile-card`'s `flex-wrap: wrap` means the two columns will stack rather than overlap on a narrow screen, but nothing beyond that has been tuned for mobile (carousel height, touch target sizing, the hamburger drawer's width, etc.).
+
+A real mobile version is planned as a future deliverable, not yet started - when it happens, it'll likely need its own breakpoint pass rather than assuming the desktop flex-wrap fallback is sufficient.
+
+## AppNav's drawer should push/squish the page instead of overlaying it
+
+[src/components/AppNav.jsx](src/components/AppNav.jsx) currently opens as a fixed-position drawer sliding on top of the page, with a semi-transparent backdrop behind it (the animejs-driven `translateX`/`opacity` pair in the `useEffect` there). The requested behavior instead is a "push" pattern - the drawer's slide-in should visibly shrink/squish the actual page content sideways (the profile card compressing to make room), rather than just floating an overlay above it with a backdrop.
+
+Implementing this would mean animating the main content area's width/transform in sync with the drawer (not just the drawer itself), and probably dropping the backdrop entirely since the page itself visibly reacts to the drawer opening. Noted as a future enhancement, not implemented yet.

@@ -171,14 +171,14 @@ form button,
   z-index: 60;
   display: grid;
   place-items: center;
-  width: 3rem;
-  height: 3rem;
+  width: 5rem;
+  height: 5rem;
   padding: 0;
   border: none;
   border-radius: 999px;
   background: transparent;
   color: var(--color-text);
-  font-size: 1.5rem;
+  font-size: 3.5rem;
   line-height: 1;
 }
 
@@ -340,6 +340,19 @@ form button,
   opacity: 0.85;
 }
 
+.app-nav-github {
+  color: #050505;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.app-nav-github:hover {
+  color: #ffffff;
+}
+
 #discover main,
 #chat main,
 #profile main,
@@ -353,13 +366,31 @@ form button,
 #profile section,
 #signup section {
   padding: 1.25rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  /* border: 1px solid var(--color-border); */
+  background: white;
+}
+
+/* Discover has no header/footer and its card is meant to fill the viewport, unlike every other page's centered 72rem column - overrides the shared main/section rules above rather than replacing them, so match-banner/loading/error states inside <main> keep their grid/gap layout. */
+#discover main {
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  align-content: center;
+}
+
+#discover .swipe-area {
+  padding: 0;
+  border: none;
+  background: none;
+  margin-top: 5rem;
 }
 
 .profile-card {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   overflow: hidden;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
@@ -367,8 +398,9 @@ form button,
 
 .profile-card .profile-name {
   margin: 0;
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  font-weight: 900;
+  font-family:'Times New Roman', Times, serif;
+  font-size: clamp(10rem, 5vw, 3.5rem);
+  font-weight: 2000;
   line-height: 1;
 }
 
@@ -399,13 +431,152 @@ form button,
 }
 
 .profile-photos {
-  flex: 1 1 16rem;
+  flex: 61 1 16rem;
   min-width: 0;
+  margin-top: 2rem;
+}
+
+.swipe-btn {
+  position: absolute;
+  bottom: 2rem;
+  z-index: 3;
+  display: grid;
+  width: 7rem;
+  height: 7rem;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff5577, #c8102e);
+  color: #ffffff;
+  font-size: 3rem;
+  line-height: 1;
+  box-shadow: 0 0.5rem 1.25rem rgb(0 0 0 / 25%);
+}
+
+.swipe-btn:not(:disabled):hover {
+  background: radial-gradient(circle at 35% 30%, #ff5577, #a70e2b);
+}
+
+.swipe-btn:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* The active slide is centered in the viewport at 50% of its width (.photo-carousel-slide's flex-basis), so its corners sit at the 25%/75% marks of the viewport - not the viewport's own edges, which is where the peek photos are instead. Centering each button on its corner (via translateX) rather than hardcoding half the button's width keeps this correct if the button size ever changes. */
+.swipe-btn-like {
+  left: 25%;
+  bottom: -10%;
+  transform: translateX(-50%);
+}
+
+.swipe-btn-dislike {
+  right: 25%;
+  bottom: -10%;
+  transform: translateX(50%);
 }
 
 .profile-photos .photo-placeholder {
   height: 100%;
   min-height: 100%;
+}
+
+.photo-carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: relative;
+}
+
+/* Deliberately no overflow here - it's the positioning reference for the nav/swipe buttons, which are meant to straddle the photo's edges. Only .photo-carousel-clip (wrapping just the sliding track) clips, so the buttons are never cut off by that same clip. */
+.photo-carousel-viewport {
+  position: relative;
+  aspect-ratio: 1.4;
+}
+
+.photo-carousel-clip {
+  height: 100%;
+  overflow: hidden;
+}
+
+.photo-carousel-track {
+  position: relative;
+  display: flex;
+  height: 100%;
+  gap: 0.75rem;
+  will-change: transform;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.photo-carousel-slide {
+  flex: 0 0 50%;
+  height: 100%;
+  will-change: transform;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.photo-carousel-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* transform: scale(1.1); */
+}
+
+.photo-carousel-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1.25rem;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.photo-carousel-nav:hover {
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+.photo-carousel-prev {
+  left: 0.75rem;
+}
+
+.photo-carousel-next {
+  right: 0.75rem;
+}
+
+.photo-carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.photo-carousel-dot {
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-text);
+}
+
+.photo-carousel-dot:hover {
+  opacity: 0.7;
+}
+
+.photo-carousel-dot-active {
+  border-radius: 0.15rem;
+  background: var(--color-text);
 }
 
 .photo-preview {
@@ -428,7 +599,7 @@ form button,
 }
 
 .profile-meta {
-  flex: 1 1 20rem;
+  flex: 39 1 20rem;
   min-width: 0;
   padding: 1.5rem;
 }
@@ -486,18 +657,15 @@ form button,
   width: 2rem;
   height: 1.75rem;
   place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-control);
-  background: var(--color-surface);
+  border: none;
+  background: none;
   color: var(--color-text);
-  font-size: 1rem;
+  font-size: 1.4rem;
   line-height: 1;
 }
 
 .profile-field-scroll button:hover {
-  border-color: var(--color-text);
-  background: var(--color-text);
-  color: var(--color-surface);
+  color: var(--color-muted);
 }
 
 .controls {

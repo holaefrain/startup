@@ -122,6 +122,9 @@ export default function AppNav() {
             <button type="button" className="app-nav-logout" onClick={handleLogout}>
               Log Out
             </button>
+            <a className="app-nav-github" href="https://github.com/holaefrain/startup" target="_blank" rel="noreferrer">
+              View on GitHub
+            </a>
           </div>
         )}
       </nav>

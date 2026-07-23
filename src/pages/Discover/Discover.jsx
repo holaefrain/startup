@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { animate } from "animejs";
 import AppNav from "../../components/AppNav.jsx";
-import Footer from "../../components/Footer.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
 import { ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
 import { useDiscoverMode } from "../../context/DiscoverModeContext.jsx";
@@ -9,6 +9,8 @@ import placeholderPhoto from "../../assets/img/1920x1080.png";
 // Already shown elsewhere on the card - name (h2), age/height/location (icon row), gender/pronouns (subtitle line) - so skipped when rendering the field table below.
 const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns"]);
 const FIELD_SCROLL_STEP = 120; // px per chevron click, roughly two table rows
+const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+const PEEK_PHOTO_SCALE = 0.82; // how much smaller a non-active carousel slide renders
 
 function AgeIcon() {
   return (
@@ -66,6 +68,37 @@ export default function Discover() {
   }, [mode, resetVersion]);
 
   const profile = profiles?.[index];
+  const photoKeys = profile?.photoKeys ?? [];
+  const photoCount = photoKeys.length;
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const photoTrackRef = useRef(null);
+
+  // A new profile always starts on its first photo, regardless of where the previous profile's carousel was left.
+  useEffect(() => {
+    setPhotoIndex(0);
+  }, [profile?.id]);
+
+  function goToPhoto(nextIndex) {
+    setPhotoIndex(Math.max(0, Math.min(photoCount - 1, nextIndex)));
+  }
+
+  // Slides the track so the active photo is centered in its viewport, revealing equal peeks of its neighbors on either side - measured in pixels via the actual rendered slide/viewport rather than assumed percentages, so it stays correct at any card width. Scales each slide individually alongside the slide (not just the track as a whole) so the incoming center photo grows to full size while the outgoing one shrinks back down to peek size.
+  useEffect(() => {
+    const track = photoTrackRef.current;
+    const slides = track ? Array.from(track.children) : [];
+    const activeSlide = slides[photoIndex];
+    if (!track || !activeSlide) return;
+
+    const viewport = track.parentElement;
+    const targetX = viewport.clientWidth / 2 - (activeSlide.offsetLeft + activeSlide.offsetWidth / 2);
+    const reduceMotion = window.matchMedia(REDUCE_MOTION_QUERY).matches;
+    const duration = reduceMotion ? 0 : 420;
+
+    animate(track, { translateX: targetX, duration, ease: "outExpo" });
+    slides.forEach((slide, slideIdx) => {
+      animate(slide, { scale: slideIdx === photoIndex ? 1 : PEEK_PHOTO_SCALE, duration, ease: "outExpo" });
+    });
+  }, [photoIndex, photoCount]);
 
   // Gender/pronouns read as one italicized line rather than table rows - only the ones the profile actually has are joined, so a profile missing one doesn't leave a dangling separator.
   const subtitleParts = profile
@@ -105,13 +138,37 @@ export default function Discover() {
       .catch(() => {});
   }
 
+  // Shared by the real carousel and the no-photos fallback below so both anchor the buttons to the same .photo-carousel-viewport (the photo itself), not whichever wrapper happens to be tallest.
+  function renderSwipeButtons() {
+    return (
+      <>
+        <button
+          id="like-btn"
+          type="button"
+          className="swipe-btn swipe-btn-like"
+          aria-label="Like"
+          disabled={!profile}
+          onClick={() => swipe("like")}
+        >
+          ♥
+        </button>
+        <button
+          id="dislike-btn"
+          type="button"
+          className="swipe-btn swipe-btn-dislike"
+          aria-label="Dislike"
+          disabled={!profile}
+          onClick={() => swipe("pass")}
+        >
+          ✕
+        </button>
+      </>
+    );
+  }
+
   return (
     <div id="discover">
-      <header>
-        <h1>Discover</h1>
-        <p>Swipe through profiles. Tap the heart or X to like or pass.</p>
-        <AppNav />
-      </header>
+      <AppNav />
 
       <main>
         {matchNotice && (
@@ -134,7 +191,8 @@ export default function Discover() {
             <article className="profile-card" data-profile-id={profile.id}>
               <div className="profile-meta">
                 <h2 className="profile-name">
-                  {profile.first_name} {profile.last_name}
+                  {profile.first_name} {profile.last_name?.charAt(0)}
+                  {profile.last_name ? "." : ""}
                 </h2>
 
                 {subtitleParts.length > 0 && <p className="profile-subtitle">{subtitleParts.join(" | ")}</p>}
@@ -177,27 +235,76 @@ export default function Discover() {
               </div>
 
               <div className="profile-photos">
-                <img
-                  className="photo-placeholder"
-                  src={placeholderPhoto}
-                  alt={`${profile.first_name} ${profile.last_name}`}
-                />
+                {photoCount > 0 ? (
+                  <div className="photo-carousel">
+                    <div className="photo-carousel-viewport">
+                      <div className="photo-carousel-clip">
+                        <div className="photo-carousel-track" ref={photoTrackRef}>
+                          {photoKeys.map((_, photoIdx) => (
+                            <div className="photo-carousel-slide" key={photoIdx}>
+                              <img
+                                src={`/api/photos/${profile.id}/${photoIdx}`}
+                                alt={`${profile.first_name} ${profile.last_name}, photo ${photoIdx + 1} of ${photoCount}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {photoIndex > 0 && (
+                        <button
+                          type="button"
+                          className="photo-carousel-nav photo-carousel-prev"
+                          aria-label="Previous photo"
+                          onClick={() => goToPhoto(photoIndex - 1)}
+                        >
+                          ‹
+                        </button>
+                      )}
+                      {photoIndex < photoCount - 1 && (
+                        <button
+                          type="button"
+                          className="photo-carousel-nav photo-carousel-next"
+                          aria-label="Next photo"
+                          onClick={() => goToPhoto(photoIndex + 1)}
+                        >
+                          ›
+                        </button>
+                      )}
+
+                      {renderSwipeButtons()}
+                    </div>
+
+                    {photoCount > 1 && (
+                      <div className="photo-carousel-dots">
+                        {photoKeys.map((_, photoIdx) => (
+                          <button
+                            key={photoIdx}
+                            type="button"
+                            className={`photo-carousel-dot${photoIdx === photoIndex ? " photo-carousel-dot-active" : ""}`}
+                            aria-label={`Go to photo ${photoIdx + 1}`}
+                            aria-current={photoIdx === photoIndex}
+                            onClick={() => goToPhoto(photoIdx)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="photo-carousel-viewport">
+                    <img
+                      className="photo-placeholder"
+                      src={placeholderPhoto}
+                      alt={`${profile.first_name} ${profile.last_name}`}
+                    />
+                    {renderSwipeButtons()}
+                  </div>
+                )}
               </div>
             </article>
           )}
         </section>
-
-        <section className="controls">
-          <button id="dislike-btn" aria-label="Dislike" type="button" disabled={!profile} onClick={() => swipe("pass")}>
-            Nope
-          </button>
-          <button id="like-btn" aria-label="Like" type="button" disabled={!profile} onClick={() => swipe("like")}>
-            Like
-          </button>
-        </section>
       </main>
-
-      <Footer />
     </div>
   );
 }
