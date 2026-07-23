@@ -4,53 +4,11 @@ import Footer from "../../components/Footer.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import CityAutocompleteInput from "../../components/CityAutocompleteInput.jsx";
 import OptionSelect, { FIELD_OPTIONS, optionLabel } from "../../components/OptionSelect.jsx";
+import { PROFILE_FIELD_GROUPS, ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
 import placeholderPhoto from "../../assets/img/1080x1920.png";
 
 // These two fields get the city/region autocomplete instead of a plain text input.
 const CITY_AUTOCOMPLETE_FIELDS = new Set(["location", "hometown"]);
-
-const FIELD_GROUPS = [
-  {
-    title: "My Vitals",
-    fields: [
-      { key: "first_name", label: "First Name", locked: "visible" },
-      { key: "last_name", label: "Last Name", locked: "visible" },
-      { key: "age", label: "Age", locked: "visible" },
-      { key: "height", label: "Height", locked: "visible" },
-      { key: "location", label: "Location", locked: "visible" },
-      { key: "ethnicity", label: "Ethnicity" },
-      { key: "children", label: "Children" },
-      { key: "family_plans", label: "Family Plans" },
-      { key: "pets", label: "Pets" },
-      { key: "zodiac_sign", label: "Zodiac Sign" },
-    ],
-  },
-  {
-    title: "Identity",
-    fields: [
-      { key: "pronouns", label: "Pronouns" },
-      { key: "gender", label: "Gender" },
-      { key: "sexuality", label: "Sexuality" },
-      { key: "interested_in", label: "I'm interested in", locked: "hidden" },
-    ],
-  },
-  {
-    title: "My Virtues",
-    fields: [
-      { key: "job_title", label: "Job Title" },
-      { key: "school", label: "School" },
-      { key: "education_level", label: "Education Level" },
-      { key: "religion", label: "Religious Beliefs" },
-      { key: "hometown", label: "Hometown" },
-      { key: "politics", label: "Politics" },
-      { key: "languages", label: "Languages Spoken" },
-      { key: "dating_intentions", label: "Dating Intentions" },
-      { key: "relationship_type", label: "Relationship Type" },
-    ],
-  },
-];
-
-const ALL_FIELDS = FIELD_GROUPS.flatMap((group) => group.fields);
 
 function patchProfile(body) {
   return fetch("/api/profile", {
@@ -74,7 +32,7 @@ export default function Profile() {
   useEffect(() => {
     if (!user || values !== null) return;
     const initial = {};
-    for (const field of ALL_FIELDS) {
+    for (const field of ALL_PROFILE_FIELDS) {
       initial[field.key] = user[field.key] ?? "";
     }
     setValues(initial);
@@ -144,7 +102,7 @@ export default function Profile() {
         </section>
 
         {values &&
-          FIELD_GROUPS.map((group) => (
+          PROFILE_FIELD_GROUPS.map((group) => (
             <section key={group.title} className="profile-field-group">
               <h2>{group.title}</h2>
               <ul>
