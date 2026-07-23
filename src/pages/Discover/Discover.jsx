@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
+import { optionLabel } from "../../components/OptionSelect.jsx";
+import { PROFILE_FIELD_GROUPS } from "../../constants/profileFields.js";
 import placeholderPhoto from "../../assets/img/1920x1080.png";
 
 const DISCOVER_MODE_KEY = "debrief:discoverMode";
+// Already shown in the card's name/age header, so skipped when rendering the rest of the profile fields below.
+const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age"]);
 
 export default function Discover() {
   const [mode, setMode] = useState(() => localStorage.getItem(DISCOVER_MODE_KEY) || "production");
@@ -118,8 +122,26 @@ export default function Discover() {
                   {profile.first_name} {profile.last_name}
                   {profile.age != null ? `, ${profile.age}` : ""}
                 </h2>
-                {profile.hometown && <p className="profile-location">{profile.hometown}</p>}
-                {profile.job_title && <p className="profile-bio">{profile.job_title}</p>}
+
+                {PROFILE_FIELD_GROUPS.map((group) => {
+                  const detailFields = group.fields.filter(
+                    (field) => !CARD_HEADER_FIELDS.has(field.key) && profile[field.key]
+                  );
+                  if (detailFields.length === 0) return null;
+                  return (
+                    <div key={group.title} className="profile-field-group">
+                      <h3>{group.title}</h3>
+                      <ul>
+                        {detailFields.map((field) => (
+                          <li key={field.key} className="profile-field-row">
+                            <span className="profile-field-label">{field.label}</span>
+                            <span className="profile-field-value">{optionLabel(field.key, profile[field.key])}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
               </div>
             </article>
           )}
