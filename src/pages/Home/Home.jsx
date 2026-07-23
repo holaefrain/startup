@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { animate } from "animejs";
-import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
 import ScrollProgress from "../../components/ScrollProgress.jsx";
 import PinnedScrollStage from "./PinnedScrollStage.jsx";
@@ -78,7 +77,6 @@ export default function Home() {
   return (
     <div id="home">
       <ScrollProgress />
-      <AppNav />
       {/* Navigation */}
       <nav id="main-nav">
         <div className="nav-content">
