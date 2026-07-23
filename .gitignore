@@ -2,3 +2,4 @@ node_modules/
 dist/
 .env
 dbConfig.json
+src/assets/img/*.svg
