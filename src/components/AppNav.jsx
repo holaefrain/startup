@@ -1,13 +1,43 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { animate, stagger } from "animejs";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useDiscoverMode } from "../context/DiscoverModeContext.jsx";
+
+const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
 export default function AppNav() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { mode, toggleMode, resetDemoMode, resetting } = useDiscoverMode();
   const [open, setOpen] = useState(false);
+  const drawerRef = useRef(null);
+  const backdropRef = useRef(null);
+  const mounted = useRef(false);
+
+  // Skips the first run (page load, always closed) so the drawer doesn't play an opening slide before the hamburger's ever been touched.
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+
+    const reduceMotion = window.matchMedia(REDUCE_MOTION_QUERY).matches;
+    const duration = reduceMotion ? 0 : open ? 420 : 260;
+
+    animate(drawerRef.current, { translateX: open ? "0%" : "-100%", duration, ease: "outExpo" });
+    animate(backdropRef.current, { opacity: open ? 1 : 0, duration, ease: "outExpo" });
+
+    if (open) {
+      animate(".app-nav-links li", {
+        opacity: [0, 1],
+        translateY: [12, 0],
+        duration: reduceMotion ? 0 : 420,
+        delay: reduceMotion ? 0 : stagger(60, { start: 120 }),
+        ease: "outExpo",
+      });
+    }
+  }, [open]);
 
   function close() {
     setOpen(false);
@@ -36,9 +66,13 @@ export default function AppNav() {
         <span aria-hidden="true">{open ? "✕" : "☰"}</span>
       </button>
 
-      {open && <div className="app-nav-backdrop" onClick={close} />}
+      <div
+        ref={backdropRef}
+        className={`app-nav-backdrop${open ? " app-nav-backdrop-open" : ""}`}
+        onClick={close}
+      />
 
-      <nav className={`app-nav${open ? " app-nav-open" : ""}`} aria-label="App navigation">
+      <nav ref={drawerRef} className={`app-nav${open ? " app-nav-open" : ""}`} aria-label="App navigation">
         <ul className="app-nav-links">
           <li>
             <NavLink to="/discover" onClick={close}>
