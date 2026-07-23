@@ -111,7 +111,7 @@ export default function Home() {
               aria-modal="true"
               aria-labelledby="loginTitle"
             >
-              <h2 id="loginTitle">Login to Debrief</h2>
+              <h2 id="loginTitle">Login/Sign up</h2>
               <form id="loginForm" onSubmit={handleLoginSubmit}>
                 <label htmlFor="email">Email</label>
                 <input id="email" type="email" name="email" required placeholder="you@example.com" />
