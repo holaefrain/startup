@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
 import Footer from "../../components/Footer.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
-import { PROFILE_FIELD_GROUPS } from "../../constants/profileFields.js";
+import { ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
 import { useDiscoverMode } from "../../context/DiscoverModeContext.jsx";
 import placeholderPhoto from "../../assets/img/1920x1080.png";
 
-// Already shown in the card's name/age header, so skipped when rendering the rest of the profile fields below.
+// Already shown elsewhere on the card (name/age header, or the icon quick-facts row once that lands in 5c), so skipped when rendering the field table below.
 const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age"]);
+const FIELD_SCROLL_STEP = 120; // px per chevron click, roughly two table rows
 
 export default function Discover() {
   const { mode, resetVersion } = useDiscoverMode();
@@ -15,6 +16,11 @@ export default function Discover() {
   const [index, setIndex] = useState(0);
   const [error, setError] = useState("");
   const [matchNotice, setMatchNotice] = useState(null);
+  const fieldTableRef = useRef(null);
+
+  function scrollFields(direction) {
+    fieldTableRef.current?.scrollBy({ top: direction * FIELD_SCROLL_STEP, behavior: "smooth" });
+  }
 
   useEffect(() => {
     // Resets everything first - the profile list, swipe index, and any stale error/match state from a previous load would otherwise carry over into a completely different data set - then fetches. Re-runs on `mode` (AppNav's real/demo switch) and on `resetVersion` (bumped by a reset-demo call even when `mode` itself doesn't change, e.g. AppNav's "Reset Demo Mode" link while staying in demo).
@@ -32,6 +38,11 @@ export default function Discover() {
   }, [mode, resetVersion]);
 
   const profile = profiles?.[index];
+
+  // The field table's scroll container is the same DOM node across swipes (React just updates its contents), so without this a scroll position left on one profile would carry into the next.
+  useEffect(() => {
+    if (fieldTableRef.current) fieldTableRef.current.scrollTop = 0;
+  }, [profile?.id]);
 
   // Advances immediately regardless of the swipe request's latency - the swipe write doesn't need to block the UI. Captures `profile` before advancing since `index` (and therefore `profile`) changes right away.
   function swipe(action) {
@@ -92,25 +103,30 @@ export default function Discover() {
                   {profile.age != null ? `, ${profile.age}` : ""}
                 </h2>
 
-                {PROFILE_FIELD_GROUPS.map((group) => {
-                  const detailFields = group.fields.filter(
-                    (field) => !CARD_HEADER_FIELDS.has(field.key) && profile[field.key]
-                  );
-                  if (detailFields.length === 0) return null;
-                  return (
-                    <div key={group.title} className="profile-field-group">
-                      <h3>{group.title}</h3>
-                      <ul>
-                        {detailFields.map((field) => (
-                          <li key={field.key} className="profile-field-row">
-                            <span className="profile-field-label">{field.label}</span>
-                            <span className="profile-field-value">{optionLabel(field.key, profile[field.key])}</span>
-                          </li>
+                <div className="profile-field-panel">
+                  <div className="profile-field-table-wrap" ref={fieldTableRef}>
+                    <table className="profile-field-table">
+                      <tbody>
+                        {ALL_PROFILE_FIELDS.filter(
+                          (field) => !CARD_HEADER_FIELDS.has(field.key) && profile[field.key]
+                        ).map((field) => (
+                          <tr key={field.key}>
+                            <th scope="row">{field.label}</th>
+                            <td>{optionLabel(field.key, profile[field.key])}</td>
+                          </tr>
                         ))}
-                      </ul>
-                    </div>
-                  );
-                })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="profile-field-scroll">
+                    <button type="button" aria-label="Scroll fields up" onClick={() => scrollFields(-1)}>
+                      ⌃
+                    </button>
+                    <button type="button" aria-label="Scroll fields down" onClick={() => scrollFields(1)}>
+                      ⌄
+                    </button>
+                  </div>
+                </div>
               </div>
             </article>
           )}

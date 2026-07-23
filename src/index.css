@@ -386,6 +386,73 @@ form button,
   padding: 1.25rem;
 }
 
+.profile-field-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.profile-field-table-wrap {
+  flex: 1;
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid var(--color-text);
+}
+
+.profile-field-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.profile-field-table th,
+.profile-field-table td {
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  font-weight: 400;
+}
+
+.profile-field-table tr:last-child th,
+.profile-field-table tr:last-child td {
+  border-bottom: none;
+}
+
+.profile-field-table th {
+  width: 40%;
+  border-right: 1px solid var(--color-border);
+  font-weight: 700;
+}
+
+.profile-field-table td {
+  color: var(--color-muted);
+}
+
+.profile-field-scroll {
+  display: grid;
+  flex-shrink: 0;
+  gap: 0.25rem;
+}
+
+.profile-field-scroll button {
+  display: grid;
+  width: 2rem;
+  height: 1.75rem;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.profile-field-scroll button:hover {
+  border-color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
 .controls {
   display: flex;
   gap: 0.75rem;
