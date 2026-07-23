@@ -58,6 +58,9 @@ export default function Discover() {
       <header>
         <h1>Discover</h1>
         <p>Swipe through profiles. Tap the heart or X to like or pass.</p>
+        <button type="button" className="mode-toggle" onClick={toggleMode}>
+          {mode === "demo" ? "Viewing demo profiles - switch to real" : "Viewing real profiles - switch to demo"}
+        </button>
         <AppNav />
       </header>
 
