@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { animate } from "animejs";
 import AppNav from "../../components/AppNav.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
 import { ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { useDiscoverMode } from "../../context/DiscoverModeContext.jsx";
 import placeholderPhoto from "../../assets/img/1920x1080.png";
+import "./Discover.css";
 
 // Already shown elsewhere on the card - name (h2), age/height/location (icon row), gender/pronouns (subtitle line) - so skipped when rendering the field table below.
 const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns"]);
@@ -40,11 +43,22 @@ function LocationIcon() {
   );
 }
 
+function MatchHeartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true">
+      <path d="M12 21s-7.5-4.87-10.2-9.36C.1 8.9 1.4 5 5.1 4.2c2-.44 3.9.4 5 2 .1.15.3.25.5.25s.4-.1.5-.25c1.1-1.6 3-2.44 5-2 3.7.8 5 4.7 3.3 7.44C19.5 16.13 12 21 12 21Z" />
+    </svg>
+  );
+}
+
 export default function Discover() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { mode, resetVersion } = useDiscoverMode();
   const [profiles, setProfiles] = useState(null);
   const [index, setIndex] = useState(0);
   const [error, setError] = useState("");
+  // Holds { matchId, profile } for the just-matched person, or null - `profile` is the swiped profile object swipe() already has in scope (photoKeys, first_name, id and all), not a separate fetch.
   const [matchNotice, setMatchNotice] = useState(null);
   const fieldTableRef = useRef(null);
 
@@ -133,7 +147,7 @@ export default function Discover() {
     })
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
-        if (data?.matched) setMatchNotice(`You and ${swipedProfile.first_name} matched!`);
+        if (data?.matched) setMatchNotice({ matchId: data.matchId, profile: swipedProfile });
       })
       .catch(() => {});
   }
@@ -166,19 +180,56 @@ export default function Discover() {
     );
   }
 
+  function renderMatchOverlay() {
+    if (!matchNotice) return null;
+    const { matchId, profile: matchedProfile } = matchNotice;
+    const yourPhoto = user?.photoKeys?.length ? `/api/photos/${user.id}/0` : placeholderPhoto;
+    const theirPhoto = matchedProfile.photoKeys?.length ? `/api/photos/${matchedProfile.id}/0` : placeholderPhoto;
+
+    return (
+      <div className="match-overlay" role="dialog" aria-modal="true" aria-labelledby="matchTitle">
+        <button className="match-close" type="button" aria-label="Close and keep swiping" onClick={() => setMatchNotice(null)}>
+          ×
+        </button>
+
+        <div className="match-photos">
+          <img className="match-photo match-photo-you" src={yourPhoto} alt="Your profile" />
+          <span className="match-heart">
+            <MatchHeartIcon />
+          </span>
+          <img className="match-photo match-photo-them" src={theirPhoto} alt={matchedProfile.first_name} />
+        </div>
+
+        <h2 id="matchTitle" className="match-title">
+          It's a match!
+        </h2>
+        <p className="match-subtitle">You and {matchedProfile.first_name} liked each other.</p>
+
+        <div className="match-actions">
+          <button
+            type="button"
+            className="match-chat-btn"
+            onClick={() => {
+              setMatchNotice(null);
+              navigate("/chat", { state: { matchId } });
+            }}
+          >
+            Send a message
+          </button>
+          <button type="button" className="match-keep-swiping-btn" onClick={() => setMatchNotice(null)}>
+            Keep swiping
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div id="discover">
       <AppNav />
 
       <main>
-        {matchNotice && (
-          <div className="match-banner" role="status">
-            <p>{matchNotice}</p>
-            <button type="button" onClick={() => setMatchNotice(null)}>
-              Dismiss
-            </button>
-          </div>
-        )}
+        {renderMatchOverlay()}
 
         <section className="swipe-area" aria-live="polite">
           {error && <p role="alert">{error}</p>}
