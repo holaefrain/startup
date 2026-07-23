@@ -2,6 +2,7 @@ const express = require("express");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser } = require("./authHelpers");
 const { PUBLIC_QUERY_PROJECTION, projectVisibleFields } = require("./userSchema");
+const { resetSeedMatchesForUser } = require("./seedMatches");
 
 const router = express.Router();
 
@@ -26,6 +27,19 @@ router.get("/discover", async (req, res) => {
     .toArray();
 
   res.json(profiles.map((profile) => ({ id: profile._id.toString(), ...projectVisibleFields(profile) })));
+});
+
+// Powers the "Reset Demo Mode" button in Discover.jsx - clears the current user's swipes/matches/messages with seed users specifically, so demo mode can be retested from a clean slate without touching any real relationships.
+router.post("/discover/reset-demo", async (req, res) => {
+  const currentUser = await getAuthenticatedUser(req);
+  if (!currentUser) {
+    res.status(401).json({ msg: "Unauthorized" });
+    return;
+  }
+
+  const db = await getDb();
+  const result = await resetSeedMatchesForUser(db, currentUser._id);
+  res.json(result);
 });
 
 module.exports = router;
