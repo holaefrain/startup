@@ -35,6 +35,46 @@ async function ensureSeedMatchesForUser(db, targetUserId, count = DEFAULT_MATCH_
   return results;
 }
 
+// Symmetric with ensureSeedMatchesForUser - removes all of targetUserId's swipes and matches (and any messages in those matches) with seed users specifically, leaving real (non-seed) swipes/matches/messages completely untouched. Powers the "Reset Demo Mode" button in Discover.jsx.
+async function resetSeedMatchesForUser(db, targetUserId) {
+  const users = db.collection("users");
+  const swipes = db.collection("swipes");
+  const matches = db.collection("matches");
+  const messages = db.collection("messages");
+
+  const seedUserIds = (await users.find({ isSeed: true }, { projection: { _id: 1 } }).toArray()).map(
+    (user) => user._id
+  );
+  if (seedUserIds.length === 0) {
+    return { swipes: 0, matches: 0, messages: 0 };
+  }
+
+  const affectedMatches = await matches
+    .find({
+      $or: [
+        { userA: targetUserId, userB: { $in: seedUserIds } },
+        { userB: targetUserId, userA: { $in: seedUserIds } },
+      ],
+    })
+    .toArray();
+  const affectedMatchIds = affectedMatches.map((match) => match._id);
+
+  const messagesResult = await messages.deleteMany({ matchId: { $in: affectedMatchIds } });
+  const matchesResult = await matches.deleteMany({ _id: { $in: affectedMatchIds } });
+  const swipesResult = await swipes.deleteMany({
+    $or: [
+      { fromUserId: targetUserId, toUserId: { $in: seedUserIds } },
+      { fromUserId: { $in: seedUserIds }, toUserId: targetUserId },
+    ],
+  });
+
+  return {
+    swipes: swipesResult.deletedCount,
+    matches: matchesResult.deletedCount,
+    messages: messagesResult.deletedCount,
+  };
+}
+
 // CLI entry point - resolves SEED_MATCH_EMAIL to a user, then delegates to ensureSeedMatchesForUser. Guarded by require.main below so requiring this file as a module (e.g. from server/discover.js) never triggers this to run.
 async function main() {
   const targetEmail = process.env.SEED_MATCH_EMAIL;
@@ -68,7 +108,7 @@ async function main() {
   await client.close();
 }
 
-module.exports = { ensureSeedMatchesForUser };
+module.exports = { ensureSeedMatchesForUser, resetSeedMatchesForUser };
 
 if (require.main === module) {
   main().catch((error) => {
