@@ -59,7 +59,7 @@ router.post("/swipes", async (req, res) => {
   const matches = db.collection("matches");
 
   // registered: true excludes bare/incomplete signups - same rule server/discover.js's feed uses, so a swipe can never be recorded against a profile that could never show up (or log in to chat back) in the first place.
-  const targetUser = await users.findOne({ _id: targetId, registered: true }, { projection: { _id: 1 } });
+  const targetUser = await users.findOne({ _id: targetId, registered: true }, { projection: { isSeed: 1 } });
   if (!targetUser) {
     res.status(404).json({ error: "User not found." });
     return;
@@ -74,6 +74,15 @@ router.post("/swipes", async (req, res) => {
   if (action !== "like") {
     res.json({ matched: false });
     return;
+  }
+
+  // Seed users are pure fixture data with no independent action of their own, so a real user liking one auto-records the reciprocal like right here - this is what makes swiping on a seed profile in demo mode a genuine, real-time "it's a match" moment instead of needing matches pre-created out of band.
+  if (targetUser.isSeed) {
+    await swipes.updateOne(
+      { fromUserId: targetId, toUserId: currentUser._id },
+      { $set: { fromUserId: targetId, toUserId: currentUser._id, action: "like", createdAt: new Date() } },
+      { upsert: true }
+    );
   }
 
   const reverseSwipe = await swipes.findOne({ fromUserId: targetId, toUserId: currentUser._id });
