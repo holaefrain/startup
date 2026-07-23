@@ -26,6 +26,7 @@ export default function Chat() {
   const threadEndRef = useRef(null);
 
   // Loads the match list once on mount.
+  // Service Deilverable: Frontend calls service endpoints
   useEffect(() => {
     fetch("/api/matches")
       .then((response) => {

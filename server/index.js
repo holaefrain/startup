@@ -34,6 +34,7 @@ const upload = multer({
   },
 });
 
+// Service Deilverable: Node.js/Express HTTP service
 const app = express();
 
 // Production runs behind Caddy, so without this every request's req.ip would resolve to Caddy's own address instead of the real client - silently defeating any per-IP rate limiting. `1` trusts exactly the immediate hop (Caddy), not the whole X-Forwarded-For chain.
@@ -41,6 +42,7 @@ const app = express();
 app.set("trust proxy", 1);
 app.use(express.json());
 app.use(cookieParser());
+// Service Deilverable: Backend service endpoints
 app.use("/api", authRouter);
 app.use("/api", discoverRouter);
 app.use("/api", profileRouter);
@@ -98,6 +100,7 @@ app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => 
 
 // Sibling to server/, not inside it - the built frontend bundle isn't backend code. Locally this directory doesn't exist (Vite serves the frontend instead), so this is a no-op in dev - it only does anything once a production deploy places a built React bundle here (see deployReact.sh).
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
+// Service Deilverable: Static middleware for frontend
 app.use(express.static(PUBLIC_DIR));
 
 app.use((error, req, res, next) => {

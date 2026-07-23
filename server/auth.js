@@ -40,6 +40,7 @@ function setAuthCookie(res, token) {
 }
 
 // Registers credentials onto an existing bare profile doc - never creates one from scratch (no more upsert), since a credential-only account with no profile was never a real intended state. Prefers targeting the exact doc by `userId` (the id POST /api/signup just returned) rather than re-resolving by email a second time - if two bare docs happen to share an email (e.g. an old one left over from before a duplicate-prevention fix shipped), an unordered email lookup could silently register the wrong one, stranding the caller's actual just-submitted data on an orphaned duplicate. `userId` is optional only for workflows that create a bare doc outside of POST /api/signup (e.g. server/seedAdminUser.js's direct Mongo insert) - in that fallback path, more than one bare candidate for the same email means we can't tell which one is meant, so this refuses rather than guessing.
+// Service Deilverable: Supports registration
 router.post("/auth", credentialRateLimit, async (req, res) => {
   const { email, password, userId } = req.body;
   const db = await getDb();
@@ -78,6 +79,7 @@ router.post("/auth", credentialRateLimit, async (req, res) => {
     return;
   }
 
+  // Service Deilverable: Uses BCrypt to hash passwords
   const passwordHash = await bcrypt.hash(password, 10);
   const token = uuidv4();
   try {
@@ -99,6 +101,7 @@ router.post("/auth", credentialRateLimit, async (req, res) => {
   res.json({ email });
 });
 
+// Service Deilverable: Supports login
 router.put("/auth", credentialRateLimit, async (req, res) => {
   const { email, password } = req.body;
   const db = await getDb();
@@ -116,6 +119,7 @@ router.put("/auth", credentialRateLimit, async (req, res) => {
   res.json({ email });
 });
 
+// Service Deilverable: Supports logout
 router.delete("/auth", async (req, res) => {
   const token = req.cookies?.token;
   if (token) {
@@ -151,9 +155,11 @@ router.get("/users/exists", existsRateLimit, async (req, res) => {
 });
 
 // Doubles as the frontend's single source of truth for the logged-in user's own full profile (src/context/AuthContext.jsx), not just a session check - pickFields(user, USER_FIELDS) already includes email, and deliberately can't include password/token/registered since those aren't in USER_FIELDS.
+// Service Deilverable: Restricted endpoint
 router.get("/user/me", async (req, res) => {
   const user = await getAuthenticatedUser(req);
   if (!user) {
+    // Service Deilverable: Restricted endpoint - 401 without a valid session
     res.status(401).json({ msg: "Unauthorized" });
     return;
   }
