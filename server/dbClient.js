@@ -1,5 +1,5 @@
 const { MongoClient } = require("mongodb");
-const dbConfig = require("../dbConfig.json");
+const dbConfig = require("./dbConfig.json");
 
 const url = `mongodb+srv://${dbConfig.userName}:${encodeURIComponent(dbConfig.password)}@${dbConfig.hostname}`;
 

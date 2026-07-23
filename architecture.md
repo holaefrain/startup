@@ -12,7 +12,6 @@ The app is bundled with Vite and rendered through React. `vite.config.js` proxie
 index.html
 vite.config.js
 deployReact.sh
-dbConfig.json          (gitignored, Mongo credentials)
 .env                    (gitignored, AWS credentials)
 src/
 ├── main.jsx
@@ -115,7 +114,7 @@ Backend work this needs (see Future Backend below): a `matches`/`messages` colle
 
 ## Backend
 
-A Node/Express server (`server/index.js`) exposes:
+A Node/Express server (`server/index.js`) exposes (Mongo credentials live in `server/dbConfig.json`, gitignored, loaded by `server/dbClient.js`):
 
 - **`POST /api/signup`** — accepts the signup wizard's `multipart/form-data` submission via Multer (`memoryStorage`, image-only `fileFilter`, 8 files / 8MB each max; no minimum photo count is enforced). It generates one `ObjectId` used as both the Mongo `_id` and the S3 key prefix (`photos/{id}/{n}.{ext}`), uploads each photo to S3 (`server/s3Client.js`), then inserts one document into MongoDB's `users` collection (`server/dbClient.js`) with the uploaded `photoKeys` attached. `server/userSchema.js` exports `USER_FIELDS`, an allow-list used to pick fields out of the request body rather than spreading it directly into the Mongo insert - `password`/`token` are deliberately excluded from that list, since they're written directly by `auth.js`, not through client-controlled signup fields.
 - **`POST /api/auth`, `PUT /api/auth`, `DELETE /api/auth`, `GET /api/user/me`** (`server/auth.js`) — registration, login, logout, and the "who am I" restricted endpoint, matching the BYU CS 260 Login deliverable contract. Passwords are bcrypt-hashed (`bcryptjs`); sessions are a random `uuid` token stored on the user's own document and sent back as an `httpOnly`/`secure`/`sameSite: strict` cookie (`cookie-parser`). Credentials live on the *same* `users` document the signup wizard creates (matched by `email`), not a separate collection, so `POST /api/auth` only 409s when that document already has a `password` set - a bare profile doc with no credentials yet (the normal case right after signup) is fair game to register against. `server/authHelpers.js` holds the shared `getAuthenticatedUser(req)` cookie → user lookup, used by both `auth.js` and `discover.js`.
@@ -172,10 +171,10 @@ sequenceDiagram
 
 Production runs on a shared EC2 box behind Caddy, at **`startup.debrief.works`** (per the CS 260 course convention - not the bare `debrief.works` domain, which is unrelated/unused for now and switches over at the end of the class). Caddy reverse-proxies that subdomain to `localhost:4000`, managed by `pm2` as the `startup` process.
 
-- **Layout on the box** (`~/services/startup/`): `public/` (the built React bundle, pushed by `deployReact.sh -s startup`), `dbConfig.json` and `.env` (production Mongo/AWS credentials, `600` permissions, gitignored, never in the static-served directory so they're unreachable over HTTP), and `server/` (this repo's backend code plus its own `node_modules`, installed from `server/package.json` so the frontend toolchain never has to be installed on the box).
-- **Process**: `pm2 start server/index.js --name startup --node-args="--env-file=.env"`, run from `~/services/startup` so path resolution (`../public`, `../dbConfig.json`) matches the local repo layout exactly. `pm2 save` persists it across a reboot.
+- **Layout on the box** (`~/services/startup/`): `public/` (the built React bundle, pushed by `deployReact.sh -s startup`), `.env` (production AWS credentials, `600` permissions, gitignored, never in the static-served directory so it's unreachable over HTTP), and `server/` (this repo's backend code plus its own `node_modules`, installed from `server/package.json` so the frontend toolchain never has to be installed on the box) - `server/dbConfig.json` (production Mongo credentials, `600` permissions, gitignored) lives inside that `server/` directory, not at the `~/services/startup/` top level.
+- **Process**: `pm2 start server/index.js --name startup --node-args="--env-file=.env"`, run from `~/services/startup` so path resolution (`../public`) matches the local repo layout exactly. `pm2 save` persists it across a reboot.
 - **Deploying frontend-only changes**: `npm run build && ./deployReact.sh -k ~/keys/production.pem -h debrief.works -s startup`.
-- **Deploying backend changes**: copy the updated `server/*.js` files + `server/package.json` to `~/services/startup/server/`, `npm install` there, `pm2 restart startup`.
+- **Deploying backend changes**: copy the updated `server/*.js` files + `server/package.json` to `~/services/startup/server/`, `npm install` there, `pm2 restart startup`. `server/dbConfig.json` itself isn't part of this routine copy - it's a one-time secret placed directly on the box, not tracked in this repo.
 - A separate, unrelated `simon.debrief.works` (a different course project) runs alongside this on the same pm2/Caddy setup and is never touched by the above.
 
 ## Current Limitations

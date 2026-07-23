@@ -64,6 +64,14 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <PlaceholderPage title="Settings" />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </DiscoverModeProvider>
       </AuthProvider>

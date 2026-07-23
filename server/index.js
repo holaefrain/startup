@@ -94,7 +94,7 @@ app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => 
   res.status(201).json({ userId: userId.toString() });
 });
 
-// Sibling to server/, not inside it: matches how dbClient.js already resolves dbConfig.json one level up. Locally this directory doesn't exist (Vite serves the frontend instead), so this is a no-op in dev - it only does anything once a production deploy places a built React bundle here (see deployReact.sh).
+// Sibling to server/, not inside it - the built frontend bundle isn't backend code. Locally this directory doesn't exist (Vite serves the frontend instead), so this is a no-op in dev - it only does anything once a production deploy places a built React bundle here (see deployReact.sh).
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
 app.use(express.static(PUBLIC_DIR));
 
