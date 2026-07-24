@@ -25,6 +25,7 @@ function PlaceholderPage({ title }) {
 }
 
 export default function App() {
+  // React Deilverable Part 1: Router
   return (
     <BrowserRouter>
       <AuthProvider>

@@ -123,6 +123,7 @@ export default function Home() {
                 ×
               </button>
               <h2 id="loginTitle">Login/Sign up</h2>
+              {/* HTML Deilverable: Login placeholder */}
               <form id="loginForm" onSubmit={handleLoginSubmit}>
                 <label htmlFor="email">Email</label>
                 <input id="email" type="email" name="email" required placeholder="you@example.com" />
@@ -134,6 +135,7 @@ export default function Home() {
                     <SendIcon />
                   </button>
                 </div>
+                {/* HTML Deilverable: Links */}
                 <p className="signup-line">
                   Don't have an account? <Link to="/signup">Sign up</Link>
                 </p>

@@ -18,6 +18,7 @@ export function useChatSocket({ enabled, onMessage }) {
     // Opens one connection and wires up its handlers; called again once, after a short delay, on an unexpected close.
     function connect() {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      // WebSocket Deilverable: Frontend makes WebSocket connection
       ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
       ws.onmessage = (event) => {

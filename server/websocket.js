@@ -47,6 +47,7 @@ function attachWebSocketServer(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
   wss.on("error", (err) => console.error("WebSocketServer error", err));
 
+  // WebSocket Deilverable: Backend listens for WebSocket connection
   httpServer.on("upgrade", (request, socket, head) => {
     const { pathname } = new URL(request.url, "http://localhost");
     if (pathname !== "/ws") {

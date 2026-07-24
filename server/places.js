@@ -29,6 +29,7 @@ const autocompleteRateLimit = rateLimit({
 
 // Shared by both routes below - Google's Places API (New) uses POST + a JSON body + these headers, not the old Legacy API's GET+query-param shape. X-Goog-FieldMask restricts the response to just what's needed, which the New Places API rewards for cost/size control.
 // Service Deilverable: Calls to third party endpoints
+// HTML Deilverable: 3rd party API placeholder (now the real integration)
 async function callPlacesApi(action, body, fieldMask) {
   // Service Deilverable: Calls to third party endpoints - server-side fetch to Google Places API
   const response = await fetch(`${PLACES_API_ROOT}:${action}`, {

@@ -1,3 +1,4 @@
+/* CSS Deilverable: Use of a CSS framework */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,6 +15,7 @@
   background: #f5f5f5;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  /* CSS Deilverable: Visually appealing colors and layout */
   --color-page: #f5f5f5;
   --color-surface: #ffffff;
   --color-text: #050505;
@@ -70,6 +72,7 @@ a:hover {
   color: var(--color-accent-strong);
 }
 
+/* CSS Deilverable: All visual elements styled using CSS */
 button {
   cursor: pointer;
   border: 1px solid var(--color-text);
@@ -79,6 +82,7 @@ button {
   font-weight: 800;
 }
 
+/* CSS Deilverable: Use of different types of selectors - element (button, above) and pseudo (:hover, here); see #discover .swipe-area in Discover.css for ID + class */
 button:hover {
   background: var(--color-accent-strong);
   border-color: var(--color-accent-strong);

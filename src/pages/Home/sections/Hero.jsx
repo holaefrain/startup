@@ -64,6 +64,7 @@ export default function Hero() {
           </figure>
         </div>
 
+        {/* HTML Deilverable: Text */}
         <div className="hero-title">
           <h1>DEBRIEF</h1>
         </div>

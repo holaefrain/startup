@@ -85,6 +85,7 @@ app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => 
   );
 
   try {
+    // DB Deilverable: Stores data in MongoDB
     await users.insertOne({ _id: userId, ...fields, photoKeys, registered: false, createdAt: new Date() });
   } catch (err) {
     // The email_unique_registered index can only ever conflict here if `fields` somehow carried a password through pickFields, which USER_FIELDS excludes by design - this is defense-in-depth, not the primary guard (the findOne check above is).

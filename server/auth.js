@@ -83,6 +83,7 @@ router.post("/auth", credentialRateLimit, async (req, res) => {
   const passwordHash = await bcrypt.hash(password, 10);
   const token = uuidv4();
   try {
+    // DB Deilverable: Stores credentials in MongoDB
     await users.updateOne(
       { _id: existing._id },
       { $set: { password: passwordHash, token, registered: true } }

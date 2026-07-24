@@ -72,6 +72,7 @@ export default function Discover() {
     setIndex(0);
     setError("");
     setMatchNotice(null);
+    // HTML Deilverable: DB data placeholder
     fetch(`/api/discover?mode=${mode}`)
       .then((response) => {
         if (!response.ok) throw new Error("Failed to load profiles.");
@@ -238,6 +239,7 @@ export default function Discover() {
 
           {!error && profiles && !profile && <p>No more profiles right now - check back later.</p>}
 
+          {/* HTML Deilverable: Proper HTML element usage */}
           {profile && (
             <article className="profile-card" data-profile-id={profile.id}>
               <div className="profile-meta">
@@ -293,6 +295,7 @@ export default function Discover() {
                         <div className="photo-carousel-track" ref={photoTrackRef}>
                           {photoKeys.map((_, photoIdx) => (
                             <div className="photo-carousel-slide" key={photoIdx}>
+                              {/* HTML Deilverable: Images */}
                               <img
                                 src={`/api/photos/${profile.id}/${photoIdx}`}
                                 alt={`${profile.first_name} ${profile.last_name}, photo ${photoIdx + 1} of ${photoCount}`}

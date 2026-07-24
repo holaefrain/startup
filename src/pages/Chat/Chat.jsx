@@ -138,6 +138,7 @@ export default function Chat() {
   }
 
   // Only appends to a match's thread cache if it's already loaded - a push for a never-opened thread would otherwise create a cache entry containing just this one message, silently producing an incomplete thread once the user does open it. Always updates the list's lastMessage summary, and de-dupes by id to absorb the sender's own echo (server broadcasts to both match participants, not just "the other one").
+  // WebSocket Deilverable: WebSocket data displayed
   useChatSocket({
     enabled: !!user,
     onMessage: (matchId, message) => {

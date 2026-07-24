@@ -8,6 +8,7 @@
   align-content: center;
 }
 
+/* CSS Deilverable: Use of different types of selectors - ID (#discover) + class (.swipe-area) combined here */
 #discover .swipe-area {
   padding: 0;
   border: none;

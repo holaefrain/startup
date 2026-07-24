@@ -94,6 +94,7 @@
   padding: clamp(1.8rem, 3vw, 2rem) clamp(1.5rem, 4vw, 4.25rem) clamp(2rem, 4vw, 2.4rem);
 }
 
+/* CSS Deilverable: Responsive to window resizing using flexbox and/or grid display */
 .hero-content {
   display: grid;
   grid-template-columns: 1fr;

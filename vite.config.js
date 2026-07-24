@@ -2,6 +2,7 @@ const { defineConfig } = require("vite");
 const react = require("@vitejs/plugin-react");
 const tailwindcss = require("@tailwindcss/vite").default;
 
+// React Deilverable Part 1: Bundled using Vite
 module.exports = defineConfig({
   plugins: [react(), tailwindcss()],
   server: {

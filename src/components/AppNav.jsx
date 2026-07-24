@@ -6,6 +6,7 @@ import { useDiscoverMode } from "../context/DiscoverModeContext.jsx";
 
 const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
+// React Deilverable Part 1: Components
 export default function AppNav() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();

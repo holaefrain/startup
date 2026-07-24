@@ -156,6 +156,7 @@ router.post("/matches/:matchId/messages", requireMatchMembership, async (req, re
   };
 
   // Both participants, not just "the other one" - covers the sender's own other open tabs too; whichever tab actually POSTed this already has it from the HTTP response below, and the client-side de-dup absorbs the echo it receives here.
+  // WebSocket Deilverable: Data sent over WebSocket connection
   broadcastToUsers([req.match.userA, req.match.userB], {
     type: "message",
     matchId: req.match._id.toString(),

@@ -8,6 +8,7 @@ async function fetchUser() {
 }
 
 export function AuthProvider({ children }) {
+  // React Deilverable Part 2: Hooks
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
