@@ -15,6 +15,32 @@ fi
 
 printf "\n----> Deploying React bundle $service to $hostname with $key\n"
 
+# Backend: only sync/install/restart server/ if a dry-run itemized diff against the target is non-empty.
+
+# package-lock.json excluded: npm regenerates it remotely, local doesn't track one, so --delete would flag it every run.
+RSYNC_EXCLUDES="--exclude dbConfig.json --exclude node_modules --exclude package-lock.json"
+printf "\n----> Checking for backend (server/) changes\n"
+# grep -v '^\.d' drops directory-only attribute diffs (e.g. mtime), which aren't real content changes.
+BACKEND_DIFF=$(rsync -ain --delete $RSYNC_EXCLUDES -e "ssh -i $key" server/ ubuntu@$hostname:services/$service/server/ | grep -v '^\.d')
+
+if [[ -n "$BACKEND_DIFF" ]]; then
+    printf "\n----> Backend changes detected:\n%s\n" "$BACKEND_DIFF"
+
+    printf "\n----> Syncing server/ to the target\n"
+    rsync -avz --delete $RSYNC_EXCLUDES -e "ssh -i $key" server/ ubuntu@$hostname:services/$service/server/
+
+    printf "\n----> Installing backend dependencies and restarting on the target\n"
+    ssh -i "$key" ubuntu@$hostname << ENDSSH
+export NVM_DIR="\$HOME/.nvm"
+. "\$NVM_DIR/nvm.sh"
+cd services/${service}/server
+npm install
+pm2 restart ${service}
+ENDSSH
+else
+    printf "\n----> No backend changes detected, skipping server sync/restart\n"
+fi
+
 # Step 1
 printf "\n----> Build the distribution package\n"
 rm -rf build
