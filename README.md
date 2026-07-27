@@ -102,82 +102,82 @@ For this deliverable I did the following. I checked the box `[x]` and added a de
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
-- [x] **Rented EC2 server** - I completed this part of the deliverable.
-- [x] **Leased domain name** - I completed this part of the deliverable.
-- [x] **Server accessible** from my domain: [https://debrief.works](https://debrief.works) - I completed this part of the deliverable.
+- [x] **Rented EC2 server** - An Ubuntu 24.04 EC2 instance runs both my `simon` and `startup` services side by side under pm2, reverse-proxied by Caddy.
+- [x] **Leased domain name** - `debrief.works`, with `startup.debrief.works` as the DNS record pointed at the EC2 instance for this app specifically.
+- [x] **Server accessible** from my domain: [https://startup.debrief.works](https://startup.debrief.works) - Caddy reverse-proxies that hostname to the Node process on port 4000.
 
 ## 🚀 HTML deliverable
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **HTML pages** - I did complete this part of the deliverable.
-- [x] **Proper HTML element usage** - I did complete this part of the deliverable.
-- [x] **Links** - I did complete this part of the deliverable.
-- [x] **Text** - I did complete this part of the deliverable.
-- [x] **3rd party API placeholder** - I did complete this part of the deliverable.
-- [x] **Images** - I did complete this part of the deliverable.
-- [x] **Login placeholder** - I did complete this part of the deliverable.
-- [x] **DB data placeholder** - I did complete this part of the deliverable.
-- [x] **WebSocket placeholder** - I did complete this part of the deliverable.
+- [x] **HTML pages** - `index.html` is the single Vite entry point; each route (Home, Signup, Discover, Chat, Profile) is its own page component under `src/pages/`.
+- [x] **Proper HTML element usage** - The Discover page's profile card is a semantic `<article>` (`src/pages/Discover/Discover.jsx`), not a generic `<div>`.
+- [x] **Links** - The Home page's login card links to Signup with React Router's `<Link to="/signup">` (`src/pages/Home/Home.jsx`).
+- [x] **Text** - The Home page's hero `<h1>DEBRIEF</h1>` (`src/pages/Home/sections/Hero.jsx`).
+- [x] **3rd party API placeholder** - Now a real integration: the server calls the Google Places API (`server/places.js`), used by Chat's date-planner venue search and Signup's city autocomplete.
+- [x] **Images** - Each profile's photos render in the Discover page's carousel via `<img>` tags pointed at `/api/photos/:userId/:index` (`src/pages/Discover/Discover.jsx`).
+- [x] **Login placeholder** - Now the real login form on the Home page (`src/pages/Home/Home.jsx`).
+- [x] **DB data placeholder** - Now real data: the Discover page fetches `/api/discover`, which reads live profiles out of MongoDB (`src/pages/Discover/Discover.jsx`).
+- [x] **WebSocket placeholder** - Now a real connection: the Chat page displays messages pushed live over WebSocket (`src/pages/Chat/Chat.jsx`).
 
 ## 🚀 CSS deliverable
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **Visually appealing colors and layout. No overflowing elements.** - I did complete this part of the deliverable.
-- [x] **Use of a CSS framework** - I did complete this part of the deliverable.
-- [x] **All visual elements styled using CSS** - I did complete this part of the deliverable.
-- [x] **Responsive to window resizing using flexbox and/or grid display** - I did complete this part of the deliverable.
-- [x] **Use of a imported font** - I did complete this part of the deliverable.
-- [x] **Use of different types of selectors including element, class, ID, and pseudo selectors** - I did complete this part of the deliverable.
+- [x] **Visually appealing colors and layout. No overflowing elements.** - A custom color system is defined once as CSS variables in `src/index.css`'s `:root` block (`--color-page`, `--color-text`, `--color-accent`, etc.) and reused site-wide.
+- [x] **Use of a CSS framework** - Tailwind is wired in via `@tailwind base/components/utilities` (`src/index.css`) and the `@tailwindcss/vite` plugin (`vite.config.js`).
+- [x] **All visual elements styled using CSS** - Every element type gets a base style, e.g. the global `button` rule in `src/index.css`.
+- [x] **Responsive to window resizing using flexbox and/or grid display** - The Home page's hero uses CSS grid (`src/pages/Home/Home.css`'s `.hero-content`) that reflows at the `@media (max-width: 760px)` breakpoint.
+- [ ] **Use of a imported font** - Not actually done yet: `src/index.css` names `Inter` in its `font-family` stack, but nothing imports it (no `@font-face`, Google Fonts link, or `@fontsource` package), so it silently falls back to a system font.
+- [x] **Use of different types of selectors including element, class, ID, and pseudo selectors** - `button` (element) and `button:hover` (pseudo) in `src/index.css`; `#discover .swipe-area` (ID + class combined) in `src/pages/Discover/Discover.css`.
 
 ## 🚀 React part 1: Routing deliverable
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **Bundled using Vite** - I did omplete this part of the deliverable.
-- [x] **Components** - I did complete this part of the deliverable.
-- [x] **Router** - I did complete this part of the deliverable.
+- [x] **Bundled using Vite** - `vite.config.js` configures the React and Tailwind Vite plugins; `npm run build` produces the production bundle deployed via `deployReact.sh`.
+- [x] **Components** - Reusable pieces like the nav (`src/components/AppNav.jsx`) sit alongside page-level components under `src/pages/`.
+- [x] **Router** - `src/App.jsx` uses `<BrowserRouter>`/`<Routes>` to map `/`, `/signup`, `/discover`, `/chat`, and `/profile` to their pages.
 
 ## 🚀 React part 2: Reactivity deliverable
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **All functionality implemented or mocked out** - I did complete this part of the deliverable.
-- [x] **Hooks** - I did complete this part of the deliverable.
+- [x] **All functionality implemented or mocked out** - Auth, Discover/swipe, matching, real-time Chat, and Profile editing are all live against the real backend; only `/liked` and `/settings` remain intentional placeholders (`PlaceholderPage` in `src/App.jsx`).
+- [x] **Hooks** - `src/context/AuthContext.jsx` uses `useState`/`useEffect` to track session state app-wide; `src/hooks/useChatSocket.js` is a custom hook wrapping the Chat page's live WebSocket connection.
 
 ## 🚀 Service deliverable
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **Node.js/Express HTTP service** - I did complete this part of the deliverable.
-- [x] **Static middleware for frontend** - I did complete this part of the deliverable.
-- [x] **Calls to third party endpoints** - I did complete this part of the deliverable.
-- [x] **Backend service endpoints** - I did  complete this part of the deliverable.
-- [x] **Frontend calls service endpoints** - I did complete this part of the deliverable.
-- [x] **Supports registration, login, logout, and restricted endpoint** - I did complete this part of the deliverable.
-- [x] **Uses BCrypt to hash passwords** - I did  complete this part of the deliverable.
+- [x] **Node.js/Express HTTP service** - `const app = express()` in `server/index.js`.
+- [x] **Static middleware for frontend** - `app.use(express.static(PUBLIC_DIR))` in `server/index.js` serves the built React bundle.
+- [x] **Calls to third party endpoints** - `server/places.js` calls the Google Places API server-side for the venue search on the Chat page's date planner.
+- [x] **Backend service endpoints** - Routers for auth, discover, profile, photos, swipes, chat, and places are all mounted under `/api` in `server/index.js`.
+- [x] **Frontend calls service endpoints** - The Chat page fetches `/api/matches` and `/api/matches/:id/messages` on load (`src/pages/Chat/Chat.jsx`).
+- [x] **Supports registration, login, logout, and restricted endpoint** - `POST/PUT/DELETE /auth` and `GET /user/me` (401s without a session) in `server/auth.js`.
+- [x] **Uses BCrypt to hash passwords** - `bcrypt.hash`/`bcrypt.compare` in `server/auth.js`'s registration and login handlers.
 
 ## 🚀 DB deliverable
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **Stores data in MongoDB** - I did not complete this part of the deliverable.
-- [x] **Stores credentials in MongoDB** - I did not complete this part of the deliverable.
+- [x] **Stores data in MongoDB** - Signup writes each new profile into the `users` collection of the `debrief` database (`users.insertOne(...)` in `server/index.js`).
+- [x] **Stores credentials in MongoDB** - Registration bcrypt-hashes the password and stores it on that same user document (`users.updateOne(..., { $set: { password: passwordHash, ... } })` in `server/auth.js`).
 
 ## 🚀 WebSocket deliverable
 
 For this deliverable I did the following. I checked the box `[x]` and added a description for things I completed.
 
 - [x] I completed the prerequisites for this deliverable (Simon deployed, GitHub link, Git commits)
-- [x] **Backend listens for WebSocket connection** - I did complete this part of the deliverable.
-- [x] **Frontend makes WebSocket connection** - I did complete this part of the deliverable.
-- [x] **Data sent over WebSocket connection** - I did complete this part of the deliverable.
-- [x] **WebSocket data displayed** - I did  complete this part of the deliverable.
-- [x] **Application is fully functional** - I did complete this part of the deliverable.
+- [x] **Backend listens for WebSocket connection** - `httpServer.on("upgrade", ...)` handles the `/ws` path in `server/websocket.js`.
+- [x] **Frontend makes WebSocket connection** - The Chat page opens `new WebSocket(...)` via the `useChatSocket` hook (`src/hooks/useChatSocket.js`).
+- [x] **Data sent over WebSocket connection** - Sending a chat message calls `broadcastToUsers(...)` to push it to both match participants (`server/chat.js`).
+- [x] **WebSocket data displayed** - The Chat page's `useChatSocket({ onMessage })` appends incoming messages straight into the visible thread (`src/pages/Chat/Chat.jsx`).
+- [x] **Application is fully functional** - Verified end-to-end in production this session: login, Discover swiping, matching, and live Chat messaging all work against the real deployed backend at `startup.debrief.works`.
