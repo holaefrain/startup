@@ -2,10 +2,17 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { getAuthenticatedUser, loadMatchMembership } = require("./authHelpers");
 const { getDb } = require("./dbClient");
+const { SAFE_IMAGE_CONTENT_TYPES } = require("./imageTypes");
 
-const PLACES_API_ROOT = "https://places.googleapis.com/v1/places";
+const PLACES_API_BASE = "https://places.googleapis.com/v1";
+const PLACES_API_ROOT = `${PLACES_API_BASE}/places`;
 const MIN_AUTOCOMPLETE_INPUT_LENGTH = 2;
 const PLACE_LOOKUP_TIMEOUT_MS = 4000; // caps how long a signup can wait on the coordinate lookup below
+const VENUE_PHOTO_MAX_HEIGHT_PX = 400; // the card renders these small; asking for less costs less bandwidth and still covers retina
+const VENUE_PHOTO_TIMEOUT_MS = 6000;
+
+// photoName goes straight into a googleapis URL path, so its shape is enforced before it's ever interpolated - without this, a crafted value could walk the path to a different Google endpoint (SSRF). Google's own format is places/<id>/photos/<ref>, both segments URL-safe base64 characters.
+const VENUE_PHOTO_NAME_PATTERN = /^places\/[A-Za-z0-9_-]{1,255}\/photos\/[A-Za-z0-9_-]{1,512}$/;
 
 // Everything the Chat "Plan a date" venue card renders. Wider than the old id/name/address trio, which puts these calls in a higher-cost Places SKU - see loadVenues' caching in Chat.jsx for why that's still one fetch per location, not per open.
 const VENUE_FIELD_MASK = [
@@ -195,6 +202,41 @@ router.get("/venues", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("GET /api/venues failed", err);
     res.status(502).json({ error: "Failed to load nearby venues." });
+  }
+});
+
+// Serves a venue photo for the "Plan a date" card. GET /api/venues returns Google's opaque photo *reference*, not an image, so this exchanges one for the bytes - proxied rather than handed to the browser as a signed Google URL, which keeps GOOGLE_MAPS_API_KEY server-side exactly like server/photos.js keeps the S3 bucket private.
+// The photo reference is a query param rather than a path segment because it contains slashes of its own.
+router.get("/venues/photo", requireAuth, async (req, res) => {
+  const photoName = typeof req.query.name === "string" ? req.query.name : "";
+  if (!VENUE_PHOTO_NAME_PATTERN.test(photoName)) {
+    res.status(400).json({ error: "Invalid photo reference." });
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `${PLACES_API_BASE}/${photoName}/media?maxHeightPx=${VENUE_PHOTO_MAX_HEIGHT_PX}`,
+      {
+        headers: { "X-Goog-Api-Key": process.env.GOOGLE_MAPS_API_KEY },
+        signal: AbortSignal.timeout(VENUE_PHOTO_TIMEOUT_MS),
+      }
+    );
+    if (!response.ok) throw new Error(`Place photo failed (${response.status})`);
+
+    // Buffered rather than streamed: these are capped at 400px, so a few tens of KB, and it avoids wiring web-stream-to-Node-stream plumbing for no practical gain.
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!SAFE_IMAGE_CONTENT_TYPES.has(contentType)) throw new Error(`Unexpected photo content type: ${contentType}`);
+    const body = Buffer.from(await response.arrayBuffer());
+
+    res.set("Content-Type", contentType);
+    res.set("X-Content-Type-Options", "nosniff");
+    // A photo reference names one immutable image, and every miss here is a billed Google call - so this caches far harder than server/photos.js's private, max-age=3600.
+    res.set("Cache-Control", "private, max-age=604800, immutable");
+    res.end(body);
+  } catch (err) {
+    console.error("GET /api/venues/photo failed", err.message);
+    res.status(502).json({ error: "Failed to load venue photo." });
   }
 });
 
