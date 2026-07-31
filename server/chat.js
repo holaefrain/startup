@@ -1,7 +1,6 @@
 const express = require("express");
-const { ObjectId } = require("mongodb");
 const { getDb } = require("./dbClient");
-const { getAuthenticatedUser } = require("./authHelpers");
+const { getAuthenticatedUser, requireMatchMembership } = require("./authHelpers");
 const { PUBLIC_QUERY_PROJECTION, projectVisibleFields } = require("./userSchema");
 const { broadcastToUsers } = require("./websocket");
 
@@ -17,39 +16,6 @@ async function requireAuth(req, res, next) {
     return;
   }
   req.user = user;
-  next();
-}
-
-// Shared by both matchId-scoped routes below - validates the id shape, loads the match, and confirms the authenticated user is actually one of its two participants before letting the request through.
-async function requireMatchMembership(req, res, next) {
-  const user = await getAuthenticatedUser(req);
-  if (!user) {
-    res.status(401).json({ msg: "Unauthorized" });
-    return;
-  }
-
-  const { matchId } = req.params;
-  if (!ObjectId.isValid(matchId)) {
-    res.status(400).json({ error: "Invalid matchId." });
-    return;
-  }
-
-  const db = await getDb();
-  const match = await db.collection("matches").findOne({ _id: new ObjectId(matchId) });
-  if (!match) {
-    res.status(404).json({ error: "Match not found." });
-    return;
-  }
-
-  const isMember = match.userA.equals(user._id) || match.userB.equals(user._id);
-  if (!isMember) {
-    res.status(403).json({ error: "You are not part of this match." });
-    return;
-  }
-
-  req.user = user;
-  req.match = match;
-  req.otherUserId = match.userA.equals(user._id) ? match.userB : match.userA;
   next();
 }
 

@@ -1,6 +1,7 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
-const { getAuthenticatedUser } = require("./authHelpers");
+const { getAuthenticatedUser, loadMatchMembership } = require("./authHelpers");
+const { getDb } = require("./dbClient");
 
 const PLACES_API_ROOT = "https://places.googleapis.com/v1/places";
 const MIN_AUTOCOMPLETE_INPUT_LENGTH = 2;
@@ -130,10 +131,36 @@ async function fetchPlaceCoordinates(placeId) {
   }
 }
 
-// Nearby venue suggestions for Chat.jsx's "Plan a date" - auth required, real coordinates from the caller's own browser geolocation.
+// Nearby venue suggestions for Chat.jsx's "Plan a date", in two scopes: "me" searches around coordinates the caller's own browser supplies, "them" searches around the other participant's saved location for a match the caller is actually part of.
+// The match's coordinates are read and used entirely server-side and never appear in the response - "Near Them" returns places, never a location, so using it can't tell you where someone lives.
 router.get("/venues", requireAuth, async (req, res) => {
-  const lat = Number(req.query.lat);
-  const lng = Number(req.query.lng);
+  const scope = req.query.scope === "them" ? "them" : "me";
+  let lat;
+  let lng;
+
+  if (scope === "them") {
+    const { otherUserId, status, error } = await loadMatchMembership(req.user, req.query.matchId ?? "");
+    if (error) {
+      res.status(status).json({ error });
+      return;
+    }
+
+    // Explicit projection because location_coords is deliberately absent from PUBLIC_QUERY_PROJECTION - nothing that reaches another user's browser carries it.
+    const db = await getDb();
+    const otherUser = await db.collection("users").findOne({ _id: otherUserId }, { projection: { location_coords: 1 } });
+    const coords = otherUser?.location_coords;
+    if (!coords) {
+      res.status(409).json({ error: "They haven't added a location yet. Try Near Me instead." });
+      return;
+    }
+
+    lat = coords.lat;
+    lng = coords.lng;
+  } else {
+    lat = Number(req.query.lat);
+    lng = Number(req.query.lng);
+  }
+
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     res.status(400).json({ error: "lat and lng are required." });
     return;
