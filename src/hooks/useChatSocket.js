@@ -3,10 +3,10 @@ import { useEffect, useRef } from "react";
 const RECONNECT_DELAY_MS = 2000;
 
 // Live delivery for Chat.jsx - progressive enhancement, not a hard dependency. If the socket never connects or drops for good, the page still works exactly as it did before this hook existed (fetch-on-open/refresh is the correctness backstop), so failures here are silent, never user-facing.
-export function useChatSocket({ enabled, onMessage }) {
-  // Kept in a ref so the effect below doesn't need `onMessage` in its dependency array - an unmemoized callback identity changing on every Chat.jsx render shouldn't tear down and reopen the connection.
-  const onMessageRef = useRef(onMessage);
-  onMessageRef.current = onMessage;
+export function useChatSocket({ enabled, onMessage, onDateAccepted, onRead }) {
+  // Kept in a ref so the effect below doesn't need these in its dependency array - unmemoized callback identities changing on every Chat.jsx render shouldn't tear down and reopen the connection.
+  const handlersRef = useRef({ onMessage, onDateAccepted, onRead });
+  handlersRef.current = { onMessage, onDateAccepted, onRead };
 
   useEffect(() => {
     if (!enabled) return;
@@ -28,9 +28,11 @@ export function useChatSocket({ enabled, onMessage }) {
         } catch {
           return;
         }
-        if (data.type === "message") {
-          onMessageRef.current(data.matchId, data.message);
-        }
+        // Every handler is optional so a caller can subscribe to only the frames it cares about, and an unrecognised type is simply ignored rather than throwing.
+        const { onMessage, onDateAccepted, onRead } = handlersRef.current;
+        if (data.type === "message") onMessage?.(data.matchId, data.message);
+        else if (data.type === "dateAccepted") onDateAccepted?.(data.matchId, data.messageId, data.acceptedBy);
+        else if (data.type === "read") onRead?.(data.matchId);
       };
 
       ws.onclose = () => {

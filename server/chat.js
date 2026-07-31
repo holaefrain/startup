@@ -1,12 +1,58 @@
 const express = require("express");
+const { ObjectId } = require("mongodb");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser, requireMatchMembership } = require("./authHelpers");
 const { PUBLIC_QUERY_PROJECTION, projectVisibleFields } = require("./userSchema");
 const { broadcastToUsers } = require("./websocket");
 
 const MAX_MESSAGE_LENGTH = 2000;
+const MAX_VENUE_FIELD_LENGTH = 300;
+const MAX_WHEN_FIELD_LENGTH = 40;
+
+// The venue fields worth persisting on a date proposal - a snapshot, deliberately, so a sent plan keeps reading the same way months later even if the place closes, is renamed, or drops off Google entirely.
+const VENUE_SNAPSHOT_TEXT_FIELDS = ["id", "name", "address", "kind", "hours", "price", "photoName"];
 
 const router = express.Router();
+
+// The venue arrives in a request body, so it's untrusted even though it originated from GET /api/venues - allow-listed and length-capped the same way userSchema.js's pickFields treats every other client-supplied object. Returns null if there's no usable name, which the caller turns into a 400.
+function pickVenueSnapshot(source) {
+  if (!source || typeof source !== "object") return null;
+
+  const venue = {};
+  for (const field of VENUE_SNAPSHOT_TEXT_FIELDS) {
+    const value = source[field];
+    if (typeof value === "string" && value.length > 0) venue[field] = value.slice(0, MAX_VENUE_FIELD_LENGTH);
+  }
+  if (Number.isFinite(source.rating)) venue.rating = source.rating;
+  if (typeof source.openNow === "boolean") venue.openNow = source.openNow;
+
+  return venue.name ? venue : null;
+}
+
+// { day, time } as the picker's own loose labels ("Friday", "9 PM") rather than a timestamp - the mock's date chip is a human label, not a calendar entry, and nothing downstream schedules off it.
+function pickWhen(source) {
+  if (!source || typeof source !== "object") return null;
+  const day = typeof source.day === "string" ? source.day.trim().slice(0, MAX_WHEN_FIELD_LENGTH) : "";
+  const time = typeof source.time === "string" ? source.time.trim().slice(0, MAX_WHEN_FIELD_LENGTH) : "";
+  return day && time ? { day, time } : null;
+}
+
+// One shape for every message the API emits, from GET, POST, and the accept route alike. Messages written before date proposals existed have no `kind`, so they read as plain text.
+function serializeMessage(message) {
+  const serialized = {
+    id: message._id.toString(),
+    senderId: message.senderId.toString(),
+    kind: message.kind ?? "text",
+    text: message.text,
+    createdAt: message.createdAt,
+  };
+  if (serialized.kind === "date") {
+    serialized.venue = message.venue;
+    serialized.when = message.when;
+    serialized.dateStatus = message.dateStatus ?? "pending";
+  }
+  return serialized;
+}
 
 // Plain session check, for the one route below that isn't scoped to a specific match.
 async function requireAuth(req, res, next) {
@@ -104,14 +150,7 @@ router.get("/matches/:matchId/messages", requireMatchMembership, async (req, res
     .sort({ createdAt: 1 })
     .toArray();
 
-  res.json(
-    messages.map((message) => ({
-      id: message._id.toString(),
-      senderId: message.senderId.toString(),
-      text: message.text,
-      createdAt: message.createdAt,
-    }))
-  );
+  res.json(messages.map(serializeMessage));
 });
 
 // Marks this match's thread read for the caller, clearing its unread badge. Stamped once per participant on the match doc rather than per message, so opening a long thread is a single small write.
@@ -123,27 +162,43 @@ router.post("/matches/:matchId/read", requireMatchMembership, async (req, res) =
     .collection("matches")
     .updateOne({ _id: req.match._id }, { $set: { [`lastReadAt.${req.user._id.toString()}`]: new Date() } });
 
+  // Only to the reader's own connections, never the other participant - this clears a badge in their other open tabs, and read receipts aren't a feature of this app.
+  broadcastToUsers([req.user._id], { type: "read", matchId: req.match._id.toString() });
+
   res.json({ ok: true });
 });
 
 // Sends one message into a match's thread; senderId always comes from the session, never the client, so nobody can post as the other participant.
 router.post("/matches/:matchId/messages", requireMatchMembership, async (req, res) => {
-  const trimmed = typeof req.body.text === "string" ? req.body.text.trim() : "";
-  if (!trimmed || trimmed.length > MAX_MESSAGE_LENGTH) {
-    res.status(400).json({ error: `Message must be 1-${MAX_MESSAGE_LENGTH} characters.` });
-    return;
+  const kind = req.body.kind === "date" ? "date" : "text";
+  const message = { matchId: req.match._id, senderId: req.user._id, kind, createdAt: new Date() };
+
+  if (kind === "date") {
+    const venue = pickVenueSnapshot(req.body.venue);
+    const when = pickWhen(req.body.when);
+    if (!venue || !when) {
+      res.status(400).json({ error: "A date plan needs a venue and a day and time." });
+      return;
+    }
+
+    // A readable summary is stored alongside the structured fields so the match list's lastMessage preview and any text-only renderer still have something to show.
+    message.venue = venue;
+    message.when = when;
+    message.dateStatus = "pending";
+    message.text = `${venue.name} - ${when.day} ${when.time}`;
+  } else {
+    const trimmed = typeof req.body.text === "string" ? req.body.text.trim() : "";
+    if (!trimmed || trimmed.length > MAX_MESSAGE_LENGTH) {
+      res.status(400).json({ error: `Message must be 1-${MAX_MESSAGE_LENGTH} characters.` });
+      return;
+    }
+    message.text = trimmed;
   }
 
-  const message = { matchId: req.match._id, senderId: req.user._id, text: trimmed, createdAt: new Date() };
   const db = await getDb();
   const result = await db.collection("messages").insertOne(message);
 
-  const responseMessage = {
-    id: result.insertedId.toString(),
-    senderId: message.senderId.toString(),
-    text: message.text,
-    createdAt: message.createdAt,
-  };
+  const responseMessage = serializeMessage({ ...message, _id: result.insertedId });
 
   // Both participants, not just "the other one" - covers the sender's own other open tabs too; whichever tab actually POSTed this already has it from the HTTP response below, and the client-side de-dup absorbs the echo it receives here.
   // WebSocket Deilverable: Data sent over WebSocket connection
@@ -154,6 +209,64 @@ router.post("/matches/:matchId/messages", requireMatchMembership, async (req, re
   });
 
   res.status(201).json(responseMessage);
+});
+
+// Accepts a date proposal the *other* participant sent. Flips the card's state for both sides and posts a confirmation into the thread - written server-side so both participants see identical wording no matter who's connected when it lands.
+router.post("/matches/:matchId/messages/:messageId/accept", requireMatchMembership, async (req, res) => {
+  const { messageId } = req.params;
+  if (!ObjectId.isValid(messageId)) {
+    res.status(400).json({ error: "Invalid messageId." });
+    return;
+  }
+
+  const db = await getDb();
+  const messages = db.collection("messages");
+
+  // Scoped to req.match._id, not just the id, so a valid messageId from some other conversation can't be accepted through this match.
+  const proposal = await messages.findOne({ _id: new ObjectId(messageId), matchId: req.match._id });
+  if (!proposal || proposal.kind !== "date") {
+    res.status(404).json({ error: "Date plan not found." });
+    return;
+  }
+  if (proposal.senderId.equals(req.user._id)) {
+    res.status(403).json({ error: "You can't accept your own date plan." });
+    return;
+  }
+  if (proposal.dateStatus === "accepted") {
+    res.status(409).json({ error: "This date plan was already accepted." });
+    return;
+  }
+
+  const acceptedAt = new Date();
+  await messages.updateOne(
+    { _id: proposal._id },
+    { $set: { dateStatus: "accepted", acceptedAt, acceptedBy: req.user._id } }
+  );
+
+  const confirmation = {
+    matchId: req.match._id,
+    senderId: req.user._id,
+    kind: "text",
+    text: `Accepted - ${proposal.when.day} at ${proposal.when.time}, ${proposal.venue.name}.`,
+    createdAt: acceptedAt,
+  };
+  const inserted = await messages.insertOne(confirmation);
+  const confirmationMessage = serializeMessage({ ...confirmation, _id: inserted.insertedId });
+
+  // Two frames rather than one: the card's state change and the new message are separate things a client updates separately, and the message frame is the same shape a normal send already broadcasts.
+  broadcastToUsers([req.match.userA, req.match.userB], {
+    type: "dateAccepted",
+    matchId: req.match._id.toString(),
+    messageId: proposal._id.toString(),
+    acceptedBy: req.user._id.toString(),
+  });
+  broadcastToUsers([req.match.userA, req.match.userB], {
+    type: "message",
+    matchId: req.match._id.toString(),
+    message: confirmationMessage,
+  });
+
+  res.json({ ok: true, messageId: proposal._id.toString(), message: confirmationMessage });
 });
 
 module.exports = router;
