@@ -234,7 +234,7 @@ export default function Chat() {
                     {venues.map((venue, index) => (
                       <li key={venue.id ?? index}>
                         <strong>{venue.name}</strong>
-                        {venue.detail ? ` - ${venue.detail}` : ""}
+                        {venue.address ? ` - ${venue.address}` : ""}
                       </li>
                     ))}
                   </ul>
