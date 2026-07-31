@@ -76,10 +76,12 @@ export default function Profile() {
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
-  // overrideValue lets a caller commit a value that hasn't landed in `values` yet - selecting a CityAutocompleteInput suggestion calls this synchronously, before the onChange it also fired has actually applied its setValues update.
-  function commitField(key, overrideValue) {
+  // overrideValue lets a caller commit a value that hasn't landed in `values` yet - selecting a CityAutocompleteInput suggestion calls this synchronously, before the onChange it also fired has actually applied its setValues update. extraFields rides along in the same PATCH so editing your location updates its place id (and, server-side, its coordinates) atomically rather than in a second request that could fail on its own.
+  function commitField(key, overrideValue, extraFields) {
     setEditingKey(null);
-    patchProfile({ fields: { [key]: overrideValue ?? values[key] } }).then((response) => response.ok && refreshUser());
+    patchProfile({ fields: { [key]: overrideValue ?? values[key], ...extraFields } }).then(
+      (response) => response.ok && refreshUser()
+    );
   }
 
   function toggleVisibility(key) {
@@ -157,7 +159,13 @@ export default function Profile() {
                             onChange={(event) => handleFieldInput(field.key, event.target.value)}
                             onBlur={() => commitField(field.key)}
                             onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
-                            onCommit={(description) => commitField(field.key, description)}
+                            onCommit={(description, placeId) =>
+                              commitField(
+                                field.key,
+                                description,
+                                field.key === "location" && placeId ? { location_place_id: placeId } : null
+                              )
+                            }
                             onClick={(event) => event.stopPropagation()}
                           />
                         ) : FIELD_OPTIONS[field.key] ? (

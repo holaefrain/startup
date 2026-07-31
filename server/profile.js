@@ -6,6 +6,7 @@ const { s3Client, bucketName } = require("./s3Client");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser } = require("./authHelpers");
 const { PROFILE_EDITABLE_FIELDS, VISIBILITY_FIELDS, pickFields } = require("./userSchema");
+const { fetchPlaceCoordinates } = require("./places");
 const { SAFE_IMAGE_CONTENT_TYPES } = require("./imageTypes");
 
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8MB, matches server/index.js's signup upload limit
@@ -60,6 +61,14 @@ router.patch("/profile", requireAuth, async (req, res) => {
   const set = { ...fields };
   for (const [field, value] of Object.entries(visibility)) {
     set[`visibility.${field}`] = value;
+  }
+
+  // Same reasoning as the signup handler in server/index.js - location_place_id stays off PROFILE_EDITABLE_FIELDS so it can't fall into the derived ALWAYS_VISIBLE_FIELDS and leak, and location_coords is only ever written from this server-side lookup, never from a request body.
+  const placeId = typeof req.body.fields?.location_place_id === "string" ? req.body.fields.location_place_id : null;
+  if (placeId) {
+    set.location_place_id = placeId;
+    const coords = await fetchPlaceCoordinates(placeId);
+    if (coords) set.location_coords = coords;
   }
 
   if (Object.keys(set).length === 0) {

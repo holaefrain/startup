@@ -60,12 +60,12 @@ export default function CityAutocompleteInput({
     }, DEBOUNCE_MS);
   }
 
-  // Fills the field with the selected suggestion and passes it to onCommit directly, since onChange's state update isn't synchronous and a caller can't rely on it having landed yet by the time onCommit runs.
-  function selectSuggestion(description) {
+  // Fills the field with the selected suggestion and passes it to onCommit directly, since onChange's state update isn't synchronous and a caller can't rely on it having landed yet by the time onCommit runs. The placeId rides along so callers that need coordinates (the location field, for Chat's "Near Them" venue search) can send it on - typing a city by hand instead of picking a suggestion simply yields no placeId, which is why it's optional everywhere downstream.
+  function selectSuggestion(description, placeId) {
     onChange({ target: { name, value: description } });
     setSuggestions([]);
     setOpen(false);
-    onCommit?.(description);
+    onCommit?.(description, placeId);
   }
 
   // Closes the dropdown on Escape, then still forwards to whatever onKeyDown the caller passed in (e.g. Profile.jsx's Enter-to-commit).
@@ -100,7 +100,7 @@ export default function CityAutocompleteInput({
               <button
                 type="button"
                 onMouseDown={(event) => event.preventDefault()}
-                onClick={() => selectSuggestion(suggestion.description)}
+                onClick={() => selectSuggestion(suggestion.description, suggestion.placeId)}
               >
                 {suggestion.description}
               </button>

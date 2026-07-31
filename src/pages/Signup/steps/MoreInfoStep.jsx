@@ -17,12 +17,14 @@ export default function MoreInfoStep({ formData, onChange, age, zodiacSign }) {
       />
 
       <label htmlFor="location">Location</label>
+      {/* Stashes the picked suggestion's placeId alongside the text so signup can resolve it to coordinates server-side - Signup.jsx's handleChange is a plain [name]: value setter, so a synthetic event is all this needs. */}
       <CityAutocompleteInput
         id="location"
         name="location"
         placeholder="City, State"
         value={formData.location}
         onChange={onChange}
+        onCommit={(description, placeId) => onChange({ target: { name: "location_place_id", value: placeId ?? "" } })}
       />
 
       <label htmlFor="ethnicity">Ethnicity</label>

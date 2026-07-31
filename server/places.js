@@ -4,6 +4,7 @@ const { getAuthenticatedUser } = require("./authHelpers");
 
 const PLACES_API_ROOT = "https://places.googleapis.com/v1/places";
 const MIN_AUTOCOMPLETE_INPUT_LENGTH = 2;
+const PLACE_LOOKUP_TIMEOUT_MS = 4000; // caps how long a signup can wait on the coordinate lookup below
 
 // Everything the Chat "Plan a date" venue card renders. Wider than the old id/name/address trio, which puts these calls in a higher-cost Places SKU - see loadVenues' caching in Chat.jsx for why that's still one fetch per location, not per open.
 const VENUE_FIELD_MASK = [
@@ -107,6 +108,28 @@ async function callPlacesApi(action, body, fieldMask) {
   return response.json();
 }
 
+// Resolves a placeId to coordinates, for the location a user picks at signup - Place Details is a plain GET on places/{id}, not the POST-to-places:{action} shape callPlacesApi handles, so it doesn't go through that helper.
+// Deliberately best-effort: coordinates are an enhancement to venue search, so a failed, denied, or slow lookup resolves to null and the caller stores nothing rather than failing the signup or profile write it's attached to.
+async function fetchPlaceCoordinates(placeId) {
+  if (typeof placeId !== "string" || placeId.length === 0) return null;
+
+  try {
+    const response = await fetch(`${PLACES_API_ROOT}/${encodeURIComponent(placeId)}`, {
+      headers: { "X-Goog-Api-Key": process.env.GOOGLE_MAPS_API_KEY, "X-Goog-FieldMask": "location" },
+      signal: AbortSignal.timeout(PLACE_LOOKUP_TIMEOUT_MS),
+    });
+    if (!response.ok) throw new Error(`Place details failed (${response.status})`);
+
+    const { location } = await response.json();
+    const { latitude, longitude } = location ?? {};
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+    return { lat: latitude, lng: longitude };
+  } catch (err) {
+    console.error("Place coordinate lookup failed", err.message);
+    return null;
+  }
+}
+
 // Nearby venue suggestions for Chat.jsx's "Plan a date" - auth required, real coordinates from the caller's own browser geolocation.
 router.get("/venues", requireAuth, async (req, res) => {
   const lat = Number(req.query.lat);
@@ -175,4 +198,4 @@ router.get("/places/autocomplete", autocompleteRateLimit, async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = { router, fetchPlaceCoordinates };

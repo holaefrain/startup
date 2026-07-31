@@ -14,7 +14,7 @@ const profileRouter = require("./profile");
 const photosRouter = require("./photos");
 const swipesRouter = require("./swipes");
 const chatRouter = require("./chat");
-const placesRouter = require("./places");
+const { router: placesRouter, fetchPlaceCoordinates } = require("./places");
 const { attachWebSocketServer } = require("./websocket");
 
 const MAX_PHOTOS = 8;
@@ -56,6 +56,12 @@ app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => 
   const fields = pickFields(req.body, USER_FIELDS);
   const db = await getDb();
   const users = db.collection("users");
+
+  // location_place_id is handled here rather than through USER_FIELDS/pickFields on purpose: PROFILE_EDITABLE_FIELDS feeds the derived ALWAYS_VISIBLE_FIELDS, so listing it there would publish a user's exact place id to everyone who sees their card. location_coords is never in any allow-list either, so only this server-side lookup can ever write it.
+  const placeId = typeof req.body.location_place_id === "string" ? req.body.location_place_id : null;
+  const coords = placeId ? await fetchPlaceCoordinates(placeId) : null;
+  if (placeId) fields.location_place_id = placeId;
+  if (coords) fields.location_coords = coords;
 
   // Read-only check, purely for a faster/clearer error - never mutates another identity's data based on an unauthenticated email match (that was the account-takeover bug in an earlier version of this handler: silently reusing and overwriting a stranger's in-progress profile, including deleting their S3 photos, with no proof of ownership). A genuinely fresh ObjectId/insert below is what actually keeps this safe.
   const existing = await users.findOne({ email: fields.email });
