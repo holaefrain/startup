@@ -47,12 +47,23 @@ router.get("/matches", requireAuth, async (req, res) => {
     .find({ matchId: { $in: matchIds } })
     .sort({ createdAt: -1 })
     .toArray();
+  // Unread is counted in this same pass rather than with a per-match count query - every message is already in memory here for the lastMessage summary, so the badge costs nothing extra.
+  const matchesById = new Map(matches.map((match) => [match._id.toString(), match]));
+  const currentUserId = req.user._id.toString();
   const lastMessageByMatchId = new Map();
+  const unreadByMatchId = new Map();
+
   for (const message of recentMessages) {
     const key = message.matchId.toString();
     if (!lastMessageByMatchId.has(key)) {
       lastMessageByMatchId.set(key, message);
     }
+
+    // Unread means "from the other person, and newer than the last time I opened this thread" - a match with no lastReadAt entry has never been opened, so everything they sent counts.
+    if (message.senderId.equals(req.user._id)) continue;
+    const lastReadAt = matchesById.get(key)?.lastReadAt?.[currentUserId];
+    if (lastReadAt && message.createdAt <= lastReadAt) continue;
+    unreadByMatchId.set(key, (unreadByMatchId.get(key) ?? 0) + 1);
   }
 
   const result = matches
@@ -68,6 +79,7 @@ router.get("/matches", requireAuth, async (req, res) => {
         lastMessage: lastMessage
           ? { senderId: lastMessage.senderId.toString(), text: lastMessage.text, createdAt: lastMessage.createdAt }
           : null,
+        unreadCount: unreadByMatchId.get(match._id.toString()) ?? 0,
         matchedAt: match.createdAt,
       };
     })
@@ -100,6 +112,18 @@ router.get("/matches/:matchId/messages", requireMatchMembership, async (req, res
       createdAt: message.createdAt,
     }))
   );
+});
+
+// Marks this match's thread read for the caller, clearing its unread badge. Stamped once per participant on the match doc rather than per message, so opening a long thread is a single small write.
+router.post("/matches/:matchId/read", requireMatchMembership, async (req, res) => {
+  const db = await getDb();
+
+  // Building a dynamic update path is only safe here because the key is the caller's own ObjectId hex from the session, never anything client-supplied - it can't introduce a "$" or "." into the path.
+  await db
+    .collection("matches")
+    .updateOne({ _id: req.match._id }, { $set: { [`lastReadAt.${req.user._id.toString()}`]: new Date() } });
+
+  res.json({ ok: true });
 });
 
 // Sends one message into a match's thread; senderId always comes from the session, never the client, so nobody can post as the other participant.
