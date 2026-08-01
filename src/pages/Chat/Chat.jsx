@@ -4,6 +4,7 @@ import Footer from "../../components/Footer.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useChatSocket } from "../../hooks/useChatSocket.js";
 import placeholderPhoto from "../../assets/img/1080x1920.png";
+import "./Chat.css";
 
 // A fresh match with no messages yet is "your turn" (the "you matched, say hi" state); otherwise it's your turn whenever the other person sent the most recent message - read from each match's precomputed lastMessage summary, not the full thread.
 function isYourTurn(match, currentUserId) {
