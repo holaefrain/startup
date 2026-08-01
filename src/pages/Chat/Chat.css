@@ -576,11 +576,201 @@
   appearance: none;
 }
 
-/* Scaffolding for bullet 4.6 - the profile view replaces this. */
-.chat-panel-pending {
-  margin: 0;
-  padding: 1.25rem;
+/* ---- See Profile ---- */
+
+.chat-profile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 1.25rem;
+  align-content: start;
+  min-height: 0;
+  padding: 1.1rem 1.25rem 1.25rem;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.chat-profile::-webkit-scrollbar {
+  display: none;
+}
+
+.chat-profile-meta {
+  min-width: 0;
+}
+
+.chat-profile-subtitle {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-style: italic;
+  font-weight: 600;
+}
+
+.chat-profile-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.chat-profile-facts li {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.chat-profile-facts svg {
+  flex-shrink: 0;
+}
+
+.chat-field-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.chat-field-wrap {
+  flex: 1;
+  min-width: 0;
+  max-height: 13rem;
+  overflow-y: auto;
+  border: 2px solid var(--color-text);
+  scrollbar-width: none;
+}
+
+.chat-field-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+.chat-field-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.chat-field-table th,
+.chat-field-table td {
+  padding: 0.42rem 0.6rem;
+  border-bottom: 1px solid var(--color-text);
+  text-align: left;
+  font-weight: 400;
+}
+
+.chat-field-table th {
+  width: 46%;
+  border-right: 1px solid var(--color-text);
+  font-weight: 500;
+}
+
+.chat-field-table td {
   color: var(--color-muted);
+}
+
+.chat-field-table tr:last-child th,
+.chat-field-table tr:last-child td {
+  border-bottom: none;
+}
+
+.chat-carousel {
+  display: grid;
+  align-content: start;
+  gap: 0.7rem;
+}
+
+.chat-carousel-viewport {
+  position: relative;
+  height: 13rem;
+  overflow: hidden;
+}
+
+/* Slides are half the viewport wide, so the active one sits centred with equal peeks either side - a plain CSS transform, no measurement and no animation library. */
+.chat-carousel-track {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  transition: transform 0.35s ease;
+}
+
+.chat-slide {
+  flex: 0 0 50%;
+  height: 100%;
+  padding: 0 0.2rem;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+.chat-slide[data-peek] {
+  transform: scale(0.78);
+  opacity: 0.85;
+}
+
+.chat-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-carousel-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1rem;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.chat-carousel-nav:hover {
+  background: var(--color-text);
+  border-color: transparent;
+  color: var(--color-surface);
+}
+
+.chat-carousel-prev {
+  left: 0.6rem;
+}
+
+.chat-carousel-next {
+  right: 0.6rem;
+}
+
+.chat-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+.chat-dot {
+  width: 0.8rem;
+  height: 0.8rem;
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-text);
+}
+
+.chat-dot:hover {
+  background: var(--color-text);
+  opacity: 0.7;
+}
+
+/* The current photo's dot squares off rather than changing colour - same discipline as the rest of the page, where colour carries meaning and selection does not. */
+.chat-dot[aria-current="true"] {
+  border-radius: 0.12rem;
 }
 
 /* Overrides index.css's `form { display: grid; max-width: 42rem }` - a class at (0,1,0) beats that element rule, so no ID needed here. */
@@ -679,7 +869,9 @@
 @media (prefers-reduced-motion: reduce) {
   .chat-row,
   .chat-venue,
-  .chat-mode {
+  .chat-mode,
+  .chat-carousel-track,
+  .chat-slide {
     transition: none;
   }
 

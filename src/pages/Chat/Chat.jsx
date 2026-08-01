@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
+import { optionLabel } from "../../components/OptionSelect.jsx";
+import { AgeIcon, HeightIcon, LocationIcon } from "../../components/ProfileIcons.jsx";
+import { ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useChatSocket } from "../../hooks/useChatSocket.js";
 import placeholderPhoto from "../../assets/img/1080x1920.png";
 import "./Chat.css";
 
 const LIST_SCROLL_STEP = 150; // px per chevron click, roughly one and a half rows
+const FIELD_SCROLL_STEP = 100; // px per chevron click in the profile's field table, roughly two rows
+
+// Already shown in the profile view's own header rows - the subtitle line and the icon facts - so skipped when rendering the field table below. Mirrors Discover's card.
+const PROFILE_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns"]);
 
 // The panel is one surface with three modes. The header offers the two you're *not* in, which is why this is a fixed order filtered by the current mode rather than three hand-written pairs - it reproduces all three of the mock's header states on its own.
 const PANEL_MODES = [
@@ -135,6 +142,123 @@ function VenueCard({ venue }) {
   );
 }
 
+// The match's profile inside the conversation panel: the same information Discover's card shows, laid out for a narrower surface. Reads entirely from the visibility-filtered otherUser the match list already returned, so it needs no extra request.
+function MatchProfile({ person, photoIndex, onPhoto, fieldTableRef }) {
+  const photoCount = person.photoKeys?.length ?? 0;
+
+  // Only the parts this person actually filled in, so a missing one never leaves a dangling separator.
+  const subtitle = [person.gender && optionLabel("gender", person.gender), person.pronouns && optionLabel("pronouns", person.pronouns)]
+    .filter(Boolean)
+    .join(" | ");
+
+  const facts = [
+    person.age != null && { key: "age", icon: <AgeIcon />, value: person.age },
+    person.height && { key: "height", icon: <HeightIcon />, value: optionLabel("height", person.height) },
+    person.location && { key: "location", icon: <LocationIcon />, value: person.location },
+  ].filter(Boolean);
+
+  const fields = ALL_PROFILE_FIELDS.filter((field) => !PROFILE_HEADER_FIELDS.has(field.key) && person[field.key]);
+
+  return (
+    <div className="chat-profile">
+      <div className="chat-profile-meta">
+        {subtitle && <p className="chat-profile-subtitle">{subtitle}</p>}
+
+        {facts.length > 0 && (
+          <ul className="chat-profile-facts">
+            {facts.map((fact) => (
+              <li key={fact.key}>
+                {fact.icon}
+                <span>{fact.value}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {fields.length > 0 && (
+          <div className="chat-field-panel">
+            <div className="chat-field-wrap" ref={fieldTableRef}>
+              <table className="chat-field-table">
+                <tbody>
+                  {fields.map((field) => (
+                    <tr key={field.key}>
+                      <th scope="row">{field.label}</th>
+                      <td>{optionLabel(field.key, person[field.key])}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="chat-rail">
+              <button
+                type="button"
+                className="chat-chev"
+                aria-label="Scroll details up"
+                onClick={() => fieldTableRef.current?.scrollBy({ top: -FIELD_SCROLL_STEP, behavior: "smooth" })}
+              >
+                <ChevronIcon direction="up" />
+              </button>
+              <button
+                type="button"
+                className="chat-chev"
+                aria-label="Scroll details down"
+                onClick={() => fieldTableRef.current?.scrollBy({ top: FIELD_SCROLL_STEP, behavior: "smooth" })}
+              >
+                <ChevronIcon direction="down" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="chat-carousel">
+        <div className="chat-carousel-viewport">
+          {/* Each slide is half the viewport, so centring slide i is a translate of 25% - i*50% - no measurement, and the peek either side falls out of it. */}
+          <div className="chat-carousel-track" style={{ transform: `translateX(calc(25% - ${photoIndex * 50}%))` }}>
+            {photoCount > 0 ? (
+              person.photoKeys.map((_, index) => (
+                <div className="chat-slide" key={index} data-peek={index === photoIndex ? undefined : ""}>
+                  <img src={`/api/photos/${person.id}/${index}`} alt={`${person.first_name}, photo ${index + 1} of ${photoCount}`} />
+                </div>
+              ))
+            ) : (
+              <div className="chat-slide">
+                <img src={placeholderPhoto} alt={person.first_name} />
+              </div>
+            )}
+          </div>
+
+          {photoIndex > 0 && (
+            <button type="button" className="chat-carousel-nav chat-carousel-prev" aria-label="Previous photo" onClick={() => onPhoto(photoIndex - 1)}>
+              &lsaquo;
+            </button>
+          )}
+          {photoIndex < photoCount - 1 && (
+            <button type="button" className="chat-carousel-nav chat-carousel-next" aria-label="Next photo" onClick={() => onPhoto(photoIndex + 1)}>
+              &rsaquo;
+            </button>
+          )}
+        </div>
+
+        {photoCount > 1 && (
+          <div className="chat-dots">
+            {person.photoKeys.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                className="chat-dot"
+                aria-label={`Go to photo ${index + 1}`}
+                aria-current={index === photoIndex}
+                onClick={() => onPhoto(index)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SendIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -169,8 +293,10 @@ export default function Chat() {
   const [venuesError, setVenuesError] = useState("");
   const [selectedVenueId, setSelectedVenueId] = useState(null);
   const [when, setWhen] = useState({ day: upcomingDays()[0], time: "8 PM" });
+  const [photoIndex, setPhotoIndex] = useState(0);
   const listRef = useRef(null);
   const threadRef = useRef(null);
+  const fieldTableRef = useRef(null);
 
   // Loads the match list once on mount.
   // Service Deilverable: Frontend calls service endpoints
@@ -200,6 +326,12 @@ export default function Chat() {
   function scrollThread(direction) {
     threadRef.current?.scrollBy({ top: direction * LIST_SCROLL_STEP, behavior: "smooth" });
   }
+
+  // The carousel and the field table's scroll position are the same DOM nodes across matches, so without resetting them one person's third photo and scrolled table would carry into the next.
+  useEffect(() => {
+    setPhotoIndex(0);
+    if (fieldTableRef.current) fieldTableRef.current.scrollTop = 0;
+  }, [selectedId]);
 
   // The newest message from the other person, badged with whatever was unread when this thread was opened - the mock shows that count once, beside the latest incoming bubble, not on every unread message.
   const newestUnreadId =
@@ -452,8 +584,14 @@ export default function Chat() {
               </header>
 
               <div className="chat-panel-body">
-                {/* Scaffolding: the profile view lands in 4.6. */}
-                {panelMode === "profile" && <p className="chat-panel-pending">Profile lands in the next bullet.</p>}
+                {panelMode === "profile" && (
+                  <MatchProfile
+                    person={selectedMatch.otherUser}
+                    photoIndex={photoIndex}
+                    onPhoto={setPhotoIndex}
+                    fieldTableRef={fieldTableRef}
+                  />
+                )}
 
                 {panelMode === "plan" && (
                   <div className="chat-planner">

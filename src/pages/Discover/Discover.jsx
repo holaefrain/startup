@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { animate } from "animejs";
 import AppNav from "../../components/AppNav.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
+import { AgeIcon, HeightIcon, LocationIcon } from "../../components/ProfileIcons.jsx";
 import { ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useDiscoverMode } from "../../context/DiscoverModeContext.jsx";
@@ -14,34 +15,6 @@ const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", 
 const FIELD_SCROLL_STEP = 120; // px per chevron click, roughly two table rows
 const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const PEEK_PHOTO_SCALE = 0.82; // how much smaller a non-active carousel slide renders
-
-function AgeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-      <path d="M12 3 L19 20 L5 20 Z" strokeLinejoin="round" />
-      <circle cx="12" cy="3" r="1.4" fill="currentColor" stroke="none" />
-      <path d="M5 20 H19" />
-    </svg>
-  );
-}
-
-function HeightIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-      <rect x="9" y="2" width="6" height="20" rx="1" />
-      <path d="M9 6 H12 M9 10 H13 M9 14 H12 M9 18 H13" />
-    </svg>
-  );
-}
-
-function LocationIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-      <path d="M12 21s7-7.58 7-12a7 7 0 1 0-14 0c0 4.42 7 12 7 12Z" strokeLinejoin="round" />
-      <circle cx="12" cy="9" r="2.3" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
 
 function MatchHeartIcon() {
   return (
