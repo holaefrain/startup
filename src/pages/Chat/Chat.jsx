@@ -41,6 +41,14 @@ function BubbleTail() {
   );
 }
 
+function SendIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M22 2 2 10.4l7.3 2.6 9.3-7.4-7.1 8.4 2.7 7.6z" />
+    </svg>
+  );
+}
+
 function ChevronIcon({ direction }) {
   return (
     <svg viewBox="0 0 32 20" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -298,17 +306,22 @@ export default function Chat() {
                 )}
               </div>
 
-              <form className="message-form" hidden={panelMode !== "chat"} onSubmit={handleSend}>
-                <label htmlFor="message-draft">Message</label>
-                <input
-                  id="message-draft"
-                  type="text"
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  placeholder="Type your message here..."
-                />
-                <button type="submit" disabled={!draft.trim()}>
-                  Send
+              <form className="chat-composer" hidden={panelMode !== "chat"} onSubmit={handleSend}>
+                <label className="chat-composer-label" htmlFor="message-draft">
+                  Message
+                </label>
+                <div className="chat-input-pill">
+                  <input
+                    id="message-draft"
+                    type="text"
+                    autoComplete="off"
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    placeholder="Type your message here..."
+                  />
+                </div>
+                <button className="chat-send" type="submit" disabled={!draft.trim()} aria-label="Send message">
+                  <SendIcon />
                 </button>
               </form>
             </section>

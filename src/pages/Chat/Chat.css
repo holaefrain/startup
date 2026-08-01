@@ -238,7 +238,7 @@
 
 /* The UA stylesheet's [hidden] { display: none } loses to an author `display: flex` or `grid`, so anything in this panel that sets a display AND toggles `hidden` needs the attribute spelled out. Qualifying the class outranks it at (0,2,0) without reaching for !important. */
 .chat-thread[hidden],
-.message-form[hidden] {
+.chat-composer[hidden] {
   display: none;
 }
 
@@ -353,14 +353,17 @@
   color: var(--color-muted);
 }
 
-.message-form {
+/* Overrides index.css's `form { display: grid; max-width: 42rem }` - a class at (0,1,0) beats that element rule, so no ID needed here. */
+.chat-composer {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
   max-width: none;
   padding: 0.85rem 1.25rem 1rem;
 }
 
-.message-form label {
+/* The field is labelled for screen readers; the mock's placeholder carries the visible instruction. */
+.chat-composer-label {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -368,8 +371,79 @@
   clip: rect(0 0 0 0);
 }
 
-.message-form input {
+.chat-input-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0.4rem 0.35rem 1.15rem;
+  border-radius: 999px;
+  background: var(--color-text);
+}
+
+/* (0,1,1), which outranks index.css's bare `input` rule and strips its border, background and min-height so the field reads as part of the pill rather than a box inside it. */
+.chat-input-pill input {
+  flex: 1;
+  min-width: 0;
+  min-height: auto;
+  padding: 0.55rem 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--color-surface);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+.chat-input-pill input::placeholder {
+  color: rgb(255 255 255 / 78%);
+}
+
+/* The pill is the visible control, so the focus ring belongs on it rather than on the transparent field inside. */
+.chat-input-pill input:focus-visible {
+  outline: none;
+}
+
+.chat-input-pill:focus-within {
+  outline: 3px solid rgb(15 118 110 / 45%);
+  outline-offset: 3px;
+}
+
+/* Two classes at (0,2,0), which is what it takes to beat index.css's `form button` at (0,1,1) - without the extra class the send control inherits that rule's min-height and padding and stops being a circle. */
+.chat-composer .chat-send {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 3.35rem;
+  height: 3.35rem;
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-go);
+  color: var(--color-surface);
+}
+
+.chat-composer .chat-send svg {
+  width: 1.6rem;
+  height: 1.6rem;
+  /* The glyph's visual mass sits low-left of its box; nudged so it looks centred in the circle rather than measuring centred. */
+  margin: -2px 2px 0 -2px;
+}
+
+.chat-composer .chat-send:hover:not(:disabled) {
+  background: var(--color-go);
+  border-color: transparent;
+  filter: brightness(0.92);
+}
+
+.chat-composer .chat-send:disabled {
+  background: var(--color-go);
+  opacity: 0.45;
+  cursor: default;
 }
 
 @media (prefers-reduced-motion: reduce) {
