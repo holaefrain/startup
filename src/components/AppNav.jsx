@@ -3,8 +3,34 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { animate, stagger } from "animejs";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useDiscoverMode } from "../context/DiscoverModeContext.jsx";
+import "./AppNav.css";
 
 const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+// Drawn rather than typed: the ☰/✕/⚙ glyphs these replace render at a different weight and baseline in every font, which is exactly the inconsistency the mock's heavy, evenly-weighted bars don't have.
+function MenuIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" aria-hidden="true">
+      <path d="M3 6h18M3 12h18M3 18h18" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" aria-hidden="true">
+      <path d="M5 5l14 14M19 5L5 19" />
+    </svg>
+  );
+}
+
+function SettingsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9.4 4a7.4 7.4 0 01-.1 1.2l2 1.6-2 3.4-2.4-1a7.6 7.6 0 01-2 1.2L16.5 21h-4l-.4-2.6a7.6 7.6 0 01-2-1.2l-2.4 1-2-3.4 2-1.6a7.4 7.4 0 010-2.4l-2-1.6 2-3.4 2.4 1a7.6 7.6 0 012-1.2L12.5 3h4l.4 2.6a7.6 7.6 0 012 1.2l2.4-1 2 3.4-2 1.6c.06.4.1.8.1 1.2z" />
+    </svg>
+  );
+}
 
 // React Deilverable Part 1: Components
 export default function AppNav() {
@@ -64,7 +90,7 @@ export default function AppNav() {
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span aria-hidden="true">{open ? "✕" : "☰"}</span>
+        {open ? <CloseIcon /> : <MenuIcon />}
       </button>
 
       <div
@@ -118,7 +144,7 @@ export default function AppNav() {
         {user && (
           <div className="app-nav-bottom">
             <NavLink to="/settings" className="app-nav-settings" onClick={close}>
-              <span aria-hidden="true">{"⚙"}</span> Settings
+              <SettingsIcon /> Settings
             </NavLink>
             <button type="button" className="app-nav-logout" onClick={handleLogout}>
               Log Out

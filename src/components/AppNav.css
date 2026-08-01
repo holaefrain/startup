@@ -1,0 +1,214 @@
+/* Styles for the AppNav drawer, co-located with the component so it travels complete to every page that mounts it (Discover, Chat, Profile) - moved out of index.css, which has no business carrying one component's styling. */
+
+/* Sits above the drawer (z-index 58) on purpose: once open, this same button is the X at the drawer's top-left, exactly as the mock draws it, rather than a second close control. */
+.app-nav-toggle {
+  position: fixed;
+  top: 1.25rem;
+  left: 1.25rem;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text);
+}
+
+.app-nav-toggle svg {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.app-nav-toggle:hover {
+  border-color: transparent;
+  background: rgb(0 0 0 / 6%);
+  color: var(--color-text);
+}
+
+.app-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgb(0 0 0 / 35%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-nav-backdrop-open {
+  pointer-events: auto;
+}
+
+.app-nav {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 58;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: min(85vw, 19rem);
+  padding: 5rem 1.75rem 2rem;
+  background: var(--color-nav);
+  color: #050505;
+  transform: translateX(-100%);
+  overflow-y: auto;
+}
+
+.app-nav-links {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-nav-links a {
+  display: block;
+  color: #050505;
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.app-nav-links a.active {
+  color: #ffffff;
+}
+
+.app-nav-mode {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.app-nav-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #050505;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.app-nav-mode-toggle:hover {
+  background: transparent;
+  color: #050505;
+}
+
+.app-nav-mode-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.app-nav-mode-track {
+  position: relative;
+  width: 2.75rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 25%);
+  transition: background 0.2s ease;
+}
+
+.app-nav-mode-toggle[aria-checked="true"] .app-nav-mode-track {
+  background: var(--color-go);
+}
+
+.app-nav-mode-knob {
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.2s ease;
+}
+
+.app-nav-mode-toggle[aria-checked="true"] .app-nav-mode-knob {
+  transform: translateX(1.25rem);
+}
+
+.app-nav-reset-demo {
+  justify-self: start;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #050505;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.app-nav-reset-demo:hover {
+  background: transparent;
+  color: #ffffff;
+}
+
+.app-nav-bottom {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.app-nav-settings {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #050505;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.app-nav-settings svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  flex-shrink: 0;
+}
+
+.app-nav-logout {
+  border: none;
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  background: #050505;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-align: center;
+}
+
+.app-nav-logout:hover {
+  background: #050505;
+  opacity: 0.85;
+}
+
+.app-nav-github {
+  color: #050505;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.app-nav-github:hover {
+  color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-nav-mode-track,
+  .app-nav-mode-knob {
+    transition: none;
+  }
+}
