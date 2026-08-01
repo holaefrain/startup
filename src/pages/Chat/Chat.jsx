@@ -41,6 +41,100 @@ function BubbleTail() {
   );
 }
 
+// The next seven days as weekday labels, which is the granularity the mock's chip shows - a plan here is a human label, not a calendar entry.
+function upcomingDays() {
+  const formatter = new Intl.DateTimeFormat(undefined, { weekday: "long" });
+  return Array.from({ length: 7 }, (_, offset) => {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    return offset === 0 ? "Today" : offset === 1 ? "Tomorrow" : formatter.format(date);
+  });
+}
+
+const TIME_OPTIONS = Array.from({ length: 16 }, (_, index) => {
+  const hour = index + 8;
+  const suffix = hour < 12 ? "AM" : "PM";
+  return `${hour % 12 === 0 ? 12 : hour % 12} ${suffix}`;
+});
+
+// The mock breaks the address after the street line, which is the first comma.
+function addressLines(address) {
+  const split = address.indexOf(",");
+  return split === -1 ? [address] : [address.slice(0, split + 1), address.slice(split + 1).trim()];
+}
+
+function StarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="m12 2 3 6.6 7 .8-5.2 4.9 1.4 7L12 17.9 5.8 21.3l1.4-7L2 9.4l7-.8z" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m4 13 5.5 5.5L20 6" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 5 5" />
+    </svg>
+  );
+}
+
+// Shared by the planner list and (from bullet 4.7) the sent proposal in the thread, so a plan reads the same wherever it appears.
+function VenueCard({ venue }) {
+  const [street, region] = addressLines(venue.address ?? "");
+  return (
+    <>
+      <img
+        className="chat-venue-face"
+        src={venue.photoName ? `/api/venues/photo?name=${encodeURIComponent(venue.photoName)}` : placeholderPhoto}
+        alt=""
+        aria-hidden="true"
+      />
+      <span className="chat-venue-lines">
+        <span className="chat-venue-top">
+          {venue.name}
+          {venue.rating != null && (
+            <span className="chat-venue-rating">
+              <StarIcon />
+              {venue.rating.toFixed(1)}
+            </span>
+          )}
+        </span>
+        <span className="chat-venue-mid">
+          {venue.kind && <span className="chat-venue-kind">{venue.kind}</span>}
+          {venue.hours && (
+            <span className="chat-venue-hours">
+              {venue.openNow != null && `${venue.openNow ? "Open" : "Closed"} • `}
+              {venue.hours}
+            </span>
+          )}
+        </span>
+        <span className="chat-venue-low">
+          <span className="chat-venue-addr">
+            {street}
+            {region && (
+              <>
+                <br />
+                {region}
+              </>
+            )}
+          </span>
+          {venue.price && <span className="chat-venue-price">{venue.price}</span>}
+        </span>
+      </span>
+    </>
+  );
+}
+
 function SendIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -68,6 +162,13 @@ export default function Chat() {
   const [panelMode, setPanelMode] = useState("chat");
   // What was unread in each match at the moment it was opened. Opening marks a thread read, so without capturing it here the mock's badge beside the newest incoming bubble would vanish the instant you could see it.
   const [unreadAtOpen, setUnreadAtOpen] = useState({});
+  const [scope, setScope] = useState("them");
+  // Keyed by scope, and by match for "them" since each match resolves to a different person's coordinates - reusing one flat list would show the wrong city after switching conversations.
+  const [venuesByKey, setVenuesByKey] = useState({});
+  const [venuesLoading, setVenuesLoading] = useState(false);
+  const [venuesError, setVenuesError] = useState("");
+  const [selectedVenueId, setSelectedVenueId] = useState(null);
+  const [when, setWhen] = useState({ day: upcomingDays()[0], time: "8 PM" });
   const listRef = useRef(null);
   const threadRef = useRef(null);
 
@@ -180,6 +281,95 @@ export default function Chat() {
     );
   }
 
+  const venueKey = selectedMatch ? (scope === "me" ? "me" : `them:${selectedMatch.id}`) : null;
+  const venues = venueKey ? venuesByKey[venueKey] : null;
+
+  // Fetches once per key and caches - "Near Me" is the same wherever you are in the app, and "Near Them" only changes when the conversation does, so neither needs refetching on every visit to the planner.
+  // Errors leave the cache empty so the next open retries rather than getting stuck on a failure.
+  useEffect(() => {
+    if (panelMode !== "plan" || !venueKey || venuesByKey[venueKey]) return;
+
+    let cancelled = false;
+    setVenuesError("");
+    setVenuesLoading(true);
+
+    function load(query) {
+      fetch(`/api/venues?${query}`)
+        .then((response) => (response.ok ? response.json() : response.json().then((body) => Promise.reject(body))))
+        .then((results) => !cancelled && setVenuesByKey((prev) => ({ ...prev, [venueKey]: results })))
+        .catch((body) => !cancelled && setVenuesError(body?.error ?? "Couldn't load places. Please try again."))
+        .finally(() => !cancelled && setVenuesLoading(false));
+    }
+
+    if (scope === "them") {
+      load(`scope=them&matchId=${selectedMatch.id}`);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!navigator.geolocation) {
+      setVenuesError("This browser can't share your location. Try Near Them instead.");
+      setVenuesLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => !cancelled && load(`scope=me&lat=${position.coords.latitude}&lng=${position.coords.longitude}`),
+      () => {
+        if (cancelled) return;
+        setVenuesError("Location is turned off for this site. Turn it on, or try Near Them.");
+        setVenuesLoading(false);
+      }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [panelMode, venueKey]);
+
+  // Sends the plan itself, plus whatever was typed as a separate note - the draft stays optional, so an empty composer sends just the card rather than putting words in anyone's mouth.
+  function handleSendPlan(event) {
+    event.preventDefault();
+    const venue = venues?.find((item) => item.id === selectedVenueId);
+    if (!venue || !selectedMatch) return;
+
+    const note = draft.trim();
+    setDraft("");
+    setSelectedVenueId(null);
+    setPanelMode("chat");
+
+    fetch(`/api/matches/${selectedMatch.id}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "date", venue, when }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to send the plan.");
+        return response.json();
+      })
+      .then((message) => {
+        appendMessage(selectedMatch.id, message);
+        if (note) return sendText(selectedMatch.id, note);
+      })
+      .catch(() => {
+        // Back to the planner with the choice intact, rather than silently dropping the user into an empty conversation.
+        setSelectedVenueId(venue.id);
+        setPanelMode("plan");
+        setDraft(note);
+      });
+  }
+
+  function sendText(matchId, text) {
+    return fetch(`/api/matches/${matchId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Failed to send message."))))
+      .then((message) => appendMessage(matchId, message));
+  }
+
   // WebSocket Deilverable: WebSocket data displayed
   useChatSocket({
     enabled: !!user,
@@ -262,11 +452,62 @@ export default function Chat() {
               </header>
 
               <div className="chat-panel-body">
-                {/* Scaffolding: the planner and profile views land in 4.5 and 4.6. */}
-                {panelMode !== "chat" && (
-                  <p className="chat-panel-pending">
-                    {panelMode === "plan" ? "Venue suggestions" : "Profile"} lands in the next bullet.
-                  </p>
+                {/* Scaffolding: the profile view lands in 4.6. */}
+                {panelMode === "profile" && <p className="chat-panel-pending">Profile lands in the next bullet.</p>}
+
+                {panelMode === "plan" && (
+                  <div className="chat-planner">
+                    <div className="chat-scope">
+                      <button
+                        type="button"
+                        className="chat-scope-pill"
+                        aria-pressed={scope === "me"}
+                        onClick={() => setScope("me")}
+                      >
+                        Near Me
+                      </button>
+                      <button
+                        type="button"
+                        className="chat-scope-pill"
+                        aria-pressed={scope === "them"}
+                        onClick={() => setScope("them")}
+                      >
+                        Near Them
+                      </button>
+                      {/* Rendered disabled so the planner keeps the mock's layout; Places text search lands in phase 5. */}
+                      <button type="button" className="chat-scope-search" disabled aria-label="Search places (not available yet)">
+                        <SearchIcon />
+                      </button>
+                    </div>
+
+                    {venuesLoading && <p className="chat-thread-note">Finding places...</p>}
+                    {venuesError && (
+                      <p className="chat-thread-note" role="alert">
+                        {venuesError}
+                      </p>
+                    )}
+                    {venues?.length === 0 && <p className="chat-thread-note">No places found nearby.</p>}
+
+                    {venues?.length > 0 && (
+                      <ul className="chat-venues">
+                        {venues.map((venue) => (
+                          <li key={venue.id} data-selected={venue.id === selectedVenueId ? "" : undefined}>
+                            <button
+                              type="button"
+                              className="chat-venue"
+                              aria-pressed={venue.id === selectedVenueId}
+                              onClick={() => setSelectedVenueId((prev) => (prev === venue.id ? null : venue.id))}
+                            >
+                              <VenueCard venue={venue} />
+                            </button>
+                            <span className="chat-venue-check" aria-hidden="true">
+                              <CheckIcon />
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 )}
 
                 <ul className="chat-thread" ref={threadRef} hidden={panelMode !== "chat"}>
@@ -306,9 +547,14 @@ export default function Chat() {
                 )}
               </div>
 
-              <form className="chat-composer" hidden={panelMode !== "chat"} onSubmit={handleSend}>
+              {/* One composer across both modes: in the planner the draft becomes an optional note attached to the plan, and the send control commits the selected venue instead of the text. */}
+              <form
+                className="chat-composer"
+                hidden={panelMode === "profile"}
+                onSubmit={panelMode === "plan" ? handleSendPlan : handleSend}
+              >
                 <label className="chat-composer-label" htmlFor="message-draft">
-                  Message
+                  {panelMode === "plan" ? "Note to send with the plan" : "Message"}
                 </label>
                 <div className="chat-input-pill">
                   <input
@@ -317,10 +563,37 @@ export default function Chat() {
                     autoComplete="off"
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
-                    placeholder="Type your message here..."
+                    placeholder={panelMode === "plan" ? "Let's meet here?" : "Type your message here..."}
                   />
+                  {panelMode === "plan" && (
+                    <span className="chat-when">
+                      <select
+                        aria-label="Day"
+                        value={when.day}
+                        onChange={(event) => setWhen((prev) => ({ ...prev, day: event.target.value }))}
+                      >
+                        {upcomingDays().map((day) => (
+                          <option key={day}>{day}</option>
+                        ))}
+                      </select>
+                      <select
+                        aria-label="Time"
+                        value={when.time}
+                        onChange={(event) => setWhen((prev) => ({ ...prev, time: event.target.value }))}
+                      >
+                        {TIME_OPTIONS.map((time) => (
+                          <option key={time}>{time}</option>
+                        ))}
+                      </select>
+                    </span>
+                  )}
                 </div>
-                <button className="chat-send" type="submit" disabled={!draft.trim()} aria-label="Send message">
+                <button
+                  className="chat-send"
+                  type="submit"
+                  disabled={panelMode === "plan" ? !selectedVenueId : !draft.trim()}
+                  aria-label={panelMode === "plan" ? "Send date plan" : "Send message"}
+                >
                   <SendIcon />
                 </button>
               </form>

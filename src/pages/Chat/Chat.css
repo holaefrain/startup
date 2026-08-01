@@ -346,7 +346,237 @@
   transform: scaleX(-1);
 }
 
-/* Scaffolding for bullets 4.5-4.6 - the planner and profile views replace this. */
+/* ---- Plan a date ---- */
+
+.chat-planner {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  min-height: 0;
+  padding: 1.1rem 4.5rem 1.25rem 1.25rem;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.chat-planner::-webkit-scrollbar {
+  display: none;
+}
+
+.chat-scope {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.chat-scope-pill {
+  padding: 0.4rem 1.4rem;
+  border: var(--chat-stroke) solid var(--color-text);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+/* The pressed pill inverts rather than tinting - this page spends its colour on meaning, and "which scope am I searching" is a selection, not a signal. */
+.chat-scope-pill[aria-pressed="true"] {
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+.chat-scope-pill:hover {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-surface);
+}
+
+.chat-scope-search {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+.chat-scope-search svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.chat-scope-search:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.chat-venues {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chat-venues li {
+  position: relative;
+}
+
+.chat-venue {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  min-height: auto;
+  padding: 0.5rem 1.15rem 0.5rem 0.5rem;
+  border: var(--chat-stroke) solid var(--color-text);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+  font-weight: 400;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.chat-venue:hover {
+  transform: translateX(3px);
+  background: var(--color-surface);
+  border-color: var(--color-text);
+  box-shadow: 4px 4px 0 var(--color-text);
+}
+
+.chat-venue-face {
+  flex: 0 0 auto;
+  width: 2.9rem;
+  height: 2.9rem;
+  border: 2px solid #2c4a52;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e9e9e9;
+}
+
+.chat-venue-lines {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.chat-venue-top {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.14rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.chat-venue-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.chat-venue-rating svg {
+  width: 1.05em;
+  height: 1.05em;
+  color: var(--color-star);
+}
+
+.chat-venue-mid,
+.chat-venue-low {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+
+.chat-venue-kind {
+  font-size: 0.92rem;
+}
+
+.chat-venue-hours {
+  white-space: nowrap;
+}
+
+.chat-venue-addr {
+  line-height: 1.2;
+}
+
+.chat-venue-price {
+  margin-left: auto;
+  font-style: normal;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Straddles the card's right edge, which is why .chat-planner carries the wide right padding - the check would otherwise be clipped by the scroll container. */
+.chat-venue-check {
+  position: absolute;
+  top: 50%;
+  right: -1rem;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: var(--color-go);
+  color: var(--color-surface);
+  transform: translateY(-50%) scale(0);
+  transition: transform 0.22s cubic-bezier(0.3, 1.5, 0.6, 1);
+  pointer-events: none;
+}
+
+.chat-venue-check svg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.chat-venues li[data-selected] .chat-venue-check {
+  transform: translateY(-50%) scale(1);
+}
+
+/* The mock's day/time chip: two real selects, so it is keyboard- and screen-reader-operable rather than a div that cycles on click. */
+.chat-when {
+  display: grid;
+  flex: 0 0 auto;
+  padding: 0.15rem 0.5rem;
+  border-radius: 14px;
+  background: var(--color-surface);
+  text-align: center;
+}
+
+.chat-when select {
+  width: auto;
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  text-align-last: center;
+  appearance: none;
+}
+
+/* Scaffolding for bullet 4.6 - the profile view replaces this. */
 .chat-panel-pending {
   margin: 0;
   padding: 1.25rem;
@@ -447,7 +677,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chat-row {
+  .chat-row,
+  .chat-venue,
+  .chat-mode {
+    transition: none;
+  }
+
+  /* The check still appears, it just stops springing in - removing the transform entirely would leave it scaled to nothing. */
+  .chat-venue-check {
     transition: none;
   }
 }
