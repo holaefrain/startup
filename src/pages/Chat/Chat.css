@@ -1,71 +1,176 @@
-/* Chat-exclusive styles, split out of index.css the same way Discover.css was - every selector below is used only by src/pages/Chat/Chat.jsx. Genuinely shared rules (the bare .photo-placeholder, the #chat main/section grid shared with Discover/Profile/Signup) deliberately stay in index.css. */
+/* Chat-exclusive styles, split out of index.css the same way Discover.css was - every selector here is used only by src/pages/Chat/Chat.jsx. Genuinely shared rules stay in index.css. */
 
-.match-list h3 {
-  margin: 1.25rem 0 0.25rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-border);
-  font-size: 0.95rem;
+/* Chat has no header/footer and fills the viewport rather than sitting in the shared 72rem column, so it overrides index.css's main/section rules the same way #discover main does. */
+#chat main {
+  width: min(100% - 3rem, 78rem);
+  max-width: none;
+  padding: 6.5rem 0 3rem;
 }
 
-.match-list h3:first-of-type {
-  margin-top: 0.5rem;
-  padding-top: 0;
-  border-top: none;
-}
-
-.match-list ul {
-  margin: 0;
+#chat section {
   padding: 0;
-  list-style: none;
+  background: none;
 }
 
-.match-row {
+/* The mock's outline weight. Every pill, card and bubble on this page shares it, so it moves together. */
+.chat-shell {
+  --chat-stroke: 3px;
+  display: grid;
+  grid-template-columns: minmax(17rem, 21rem) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0 1.75rem;
+  min-height: calc(100vh - 9.5rem);
+}
+
+.chat-list-col {
+  min-width: 0;
+}
+
+.chat-title {
+  margin: 0 0 1.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 4.6vw, 4.1rem);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.9;
+}
+
+/* Scrollbar hidden because the chevron rail beside it is the intended control - the list still scrolls by wheel, trackpad and keyboard. */
+.chat-list {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0;
+  /* Padding, not decoration: the scroll container clips, and the unread badge overhangs each row by 0.55rem at the top and 0.35rem at the right - anything tighter shaves the first row's badge. */
+  padding: 0.75rem 0.7rem 0.35rem 0;
+  list-style: none;
+  max-height: 26rem;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.chat-list::-webkit-scrollbar {
+  display: none;
+}
+
+.chat-list-item {
+  position: relative;
+}
+
+.chat-row {
   display: flex;
   align-items: center;
   gap: 0.85rem;
   width: 100%;
   min-height: auto;
-  padding: 0.75rem 0.25rem;
-  border: none;
-  border-bottom: 1px solid var(--color-border);
-  border-radius: 0;
-  background: none;
-  color: inherit;
+  padding: 0.55rem 1.4rem 0.55rem 0.55rem;
+  border: var(--chat-stroke) solid var(--color-text);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
   text-align: left;
   font-weight: 400;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.match-row:hover {
-  background: var(--color-page);
-  border-color: var(--color-border);
+.chat-row:hover,
+.chat-row[aria-current="true"] {
+  transform: translateX(4px);
+  background: var(--color-surface);
+  border-color: var(--color-text);
+  box-shadow: 4px 4px 0 var(--color-text);
 }
 
-.match-photo-placeholder {
-  width: 3.5rem;
-  height: 3.5rem;
-  flex-shrink: 0;
+.chat-row-face {
+  flex: 0 0 auto;
+  width: 3.4rem;
+  height: 3.4rem;
+  border: 2px solid #2c4a52;
   border-radius: 50%;
   object-fit: cover;
   background: #e9e9e9;
 }
 
-.match-info {
+.chat-row-text {
   display: grid;
-  gap: 0.15rem;
+  gap: 0.1rem;
   min-width: 0;
 }
 
-.match-name {
-  font-weight: 800;
+.chat-row-name {
+  font-family: var(--font-display);
+  font-size: 1.28rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
 }
 
-.match-preview {
+.chat-row-preview {
   overflow: hidden;
-  color: var(--color-muted);
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  font-style: italic;
+  letter-spacing: -0.01em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Unread is carried by weight, not only by the badge - the whole row gets louder, so an unread conversation reads as unread even before the count registers. */
+.chat-row[data-unread] .chat-row-name,
+.chat-row[data-unread] .chat-row-preview {
+  font-weight: 800;
+}
+
+.chat-badge {
+  position: absolute;
+  top: -0.55rem;
+  right: -0.35rem;
+  display: grid;
+  place-items: center;
+  min-width: 2.35rem;
+  height: 2.35rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--color-alert);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.chat-rail {
+  display: grid;
+  align-content: center;
+  gap: 0.65rem;
+}
+
+.chat-chev {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 2.1rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text);
+}
+
+.chat-chev svg {
+  width: 100%;
+  height: 100%;
+}
+
+.chat-chev:hover {
+  background: none;
+  border-color: transparent;
+  color: var(--color-nav);
+}
+
+.chat-panel-col {
+  min-width: 0;
+}
+
+/* Scaffolding for bullets 4.2-4.7 - the panel's real header, bubbles and composer replace these. */
 .conversation-header {
   display: flex;
   flex-wrap: wrap;
@@ -126,16 +231,8 @@
   flex: 1;
 }
 
-.profile-preview,
-.date-planner {
-  display: grid;
-  gap: 0.4rem;
-  margin: 1rem 0;
-  padding: 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-}
-
-.profile-preview .photo-placeholder {
-  min-height: 12rem;
+@media (prefers-reduced-motion: reduce) {
+  .chat-row {
+    transition: none;
+  }
 }

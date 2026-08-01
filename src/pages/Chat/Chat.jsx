@@ -1,14 +1,35 @@
 import { useEffect, useRef, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
-import Footer from "../../components/Footer.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useChatSocket } from "../../hooks/useChatSocket.js";
 import placeholderPhoto from "../../assets/img/1080x1920.png";
 import "./Chat.css";
 
-// A fresh match with no messages yet is "your turn" (the "you matched, say hi" state); otherwise it's your turn whenever the other person sent the most recent message - read from each match's precomputed lastMessage summary, not the full thread.
-function isYourTurn(match, currentUserId) {
-  return !match.lastMessage || match.lastMessage.senderId !== currentUserId;
+const LIST_SCROLL_STEP = 150; // px per chevron click, roughly one and a half rows
+
+// "Efrain C." - the mock shows a first name and a last initial, same shortening Discover's card uses.
+function displayName(person) {
+  const initial = person.last_name ? ` ${person.last_name.charAt(0)}.` : "";
+  return `${person.first_name}${initial}`;
+}
+
+function photoUrl(person) {
+  return person.photoKeys?.length ? `/api/photos/${person.id}/0` : placeholderPhoto;
+}
+
+// The list preview: the last thing said, prefixed when it was me. A match nobody has written in yet invites the first message rather than showing an empty row.
+function previewText(match, currentUserId) {
+  if (!match.lastMessage) return "Say hi!";
+  const prefix = match.lastMessage.senderId === currentUserId ? "You: " : "";
+  return `${prefix}${match.lastMessage.text}`;
+}
+
+function ChevronIcon({ direction }) {
+  return (
+    <svg viewBox="0 0 32 20" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={direction === "up" ? "M3 17 16 4l13 13" : "M3 3 16 16l13-13"} />
+    </svg>
+  );
 }
 
 export default function Chat() {
@@ -19,11 +40,7 @@ export default function Chat() {
   const [messagesByMatch, setMessagesByMatch] = useState({});
   const [threadLoading, setThreadLoading] = useState(false);
   const [draft, setDraft] = useState("");
-  const [showDatePlanner, setShowDatePlanner] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [venues, setVenues] = useState(null);
-  const [venuesLoading, setVenuesLoading] = useState(false);
-  const [venuesError, setVenuesError] = useState("");
+  const listRef = useRef(null);
   const threadEndRef = useRef(null);
 
   // Loads the match list once on mount.
@@ -35,24 +52,32 @@ export default function Chat() {
         return response.json();
       })
       .then(setMatches)
-      .catch(() => setError("Couldn't load matches. Please try again."));
+      .catch(() => setError("Couldn't load your chats. Please try again."));
   }, []);
 
   const selectedMatch = matches?.find((match) => match.id === selectedId) ?? null;
   const selectedMessages = selectedId ? messagesByMatch[selectedId] : null;
-  const yourTurnMatches = matches?.filter((match) => isYourTurn(match, user.id)) ?? [];
-  const theirTurnMatches = matches?.filter((match) => !isYourTurn(match, user.id)) ?? [];
 
   // Keeps the newest message in view as the thread grows.
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ block: "nearest" });
   }, [selectedMessages]);
 
+  function scrollList(direction) {
+    listRef.current?.scrollBy({ top: direction * LIST_SCROLL_STEP, behavior: "smooth" });
+  }
+
+  // Zeroes the badge locally the moment a thread is opened rather than waiting on the request - the read stamp is bookkeeping, and a slow or failed one shouldn't leave a badge sitting on a conversation the user is looking at.
+  function markRead(matchId) {
+    setMatches((prev) => prev?.map((match) => (match.id === matchId ? { ...match, unreadCount: 0 } : match)) ?? prev);
+    fetch(`/api/matches/${matchId}/read`, { method: "POST" }).catch(() => {});
+  }
+
   // Fetches a match's thread once and caches it - only on success, so a failed request isn't permanently mistaken for "this match really has no messages" and doesn't block a retry on reselect.
   function openMatch(id) {
     setSelectedId(id);
-    setShowDatePlanner(false);
-    setShowProfile(false);
+    setDraft("");
+    markRead(id);
 
     if (messagesByMatch[id]) return;
     setThreadLoading(true);
@@ -82,220 +107,134 @@ export default function Chat() {
         if (!response.ok) throw new Error("Failed to send message.");
         return response.json();
       })
-      .then((message) => {
-        setMessagesByMatch((prev) => ({
-          ...prev,
-          [selectedMatch.id]: [...(prev[selectedMatch.id] ?? []), message],
-        }));
-        setMatches((prev) =>
-          prev.map((match) =>
-            match.id === selectedMatch.id
-              ? {
-                  ...match,
-                  lastMessage: { senderId: message.senderId, text: message.text, createdAt: message.createdAt },
-                }
-              : match
-          )
-        );
-      })
+      .then((message) => appendMessage(selectedMatch.id, message))
       .catch(() => setDraft(text));
   }
 
-  // Fetches venues once (lazily, on first open) and reuses them across matches/reopens - "nearby" is based on the current browser's location, not anything match-specific, so there's no reason to refetch per match. Errors leave `venues` null so the next open retries instead of getting stuck on a failure.
-  function loadVenues() {
-    if (venues || venuesLoading) return;
-    if (!navigator.geolocation) {
-      setVenuesError("Location isn't available in this browser.");
-      return;
-    }
-
-    setVenuesLoading(true);
-    setVenuesError("");
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        fetch(`/api/venues?lat=${latitude}&lng=${longitude}`)
-          .then((response) => {
-            if (!response.ok) throw new Error("Failed to load venues.");
-            return response.json();
-          })
-          .then(setVenues)
-          .catch(() => setVenuesError("Couldn't load venue suggestions. Please try again."))
-          .finally(() => setVenuesLoading(false));
-      },
-      () => {
-        setVenuesError("Location permission denied. Enable it to see nearby venues.");
-        setVenuesLoading(false);
-      }
+  // Shared by handleSend and the socket push below - adds to the thread cache only when it's already loaded (a push for a never-opened thread would otherwise leave a cache entry holding just that one message), de-dupes by id to absorb the sender's own echo, and always refreshes the list's summary.
+  function appendMessage(matchId, message) {
+    setMessagesByMatch((prev) => {
+      const existing = prev[matchId];
+      if (!existing || existing.some((m) => m.id === message.id)) return prev;
+      return { ...prev, [matchId]: [...existing, message] };
+    });
+    setMatches((prev) =>
+      prev?.map((match) =>
+        match.id === matchId
+          ? {
+              ...match,
+              lastMessage: { senderId: message.senderId, text: message.text, createdAt: message.createdAt },
+              // A message arriving in the thread already on screen is read on arrival; anywhere else it raises the badge.
+              unreadCount:
+                message.senderId === user.id || matchId === selectedId ? match.unreadCount ?? 0 : (match.unreadCount ?? 0) + 1,
+            }
+          : match
+      ) ?? prev
     );
   }
 
-  function toggleDatePlanner() {
-    setShowDatePlanner((prev) => {
-      const next = !prev;
-      if (next) loadVenues();
-      return next;
-    });
-  }
-
-  // Only appends to a match's thread cache if it's already loaded - a push for a never-opened thread would otherwise create a cache entry containing just this one message, silently producing an incomplete thread once the user does open it. Always updates the list's lastMessage summary, and de-dupes by id to absorb the sender's own echo (server broadcasts to both match participants, not just "the other one").
   // WebSocket Deilverable: WebSocket data displayed
   useChatSocket({
     enabled: !!user,
-    onMessage: (matchId, message) => {
-      setMessagesByMatch((prev) => {
-        const existing = prev[matchId];
-        if (!existing || existing.some((m) => m.id === message.id)) return prev;
-        return { ...prev, [matchId]: [...existing, message] };
-      });
-      setMatches((prev) =>
-        prev?.map((match) =>
-          match.id === matchId
-            ? { ...match, lastMessage: { senderId: message.senderId, text: message.text, createdAt: message.createdAt } }
-            : match
-        ) ?? prev
-      );
-    },
+    onMessage: appendMessage,
+    onRead: (matchId) =>
+      setMatches((prev) => prev?.map((match) => (match.id === matchId ? { ...match, unreadCount: 0 } : match)) ?? prev),
   });
 
   return (
-    <div id="chat">
-      <header>
-        <h1>Chat</h1>
-        <p>Messages with your matches will appear here.</p>
-        <AppNav />
-      </header>
+    <div id="chat" className={selectedMatch ? "chat-thread-open" : undefined}>
+      <AppNav />
 
-      <main>
-        {error && <p role="alert">{error}</p>}
+      <main className="chat-shell">
+        <div className="chat-list-col">
+          <h1 className="chat-title">Chats</h1>
 
-        {!error && !selectedMatch && (
-          <section className="match-list" aria-live="polite">
-            <h2>Matches</h2>
+          {error && <p role="alert">{error}</p>}
+          {!error && !matches && <p>Loading chats...</p>}
+          {matches && matches.length === 0 && <p>No matches yet - keep swiping on Discover!</p>}
 
-            {!matches && <p>Loading matches...</p>}
-
-            {matches && matches.length === 0 && <p>No matches yet - keep swiping on Discover!</p>}
-
-            {matches && matches.length > 0 && (
-              <>
-                <h3>Your turn ({yourTurnMatches.length})</h3>
-                <ul>
-                  {yourTurnMatches.map((match) => (
-                    <MatchRow key={match.id} match={match} currentUserId={user.id} onSelect={openMatch} />
-                  ))}
-                </ul>
-
-                <h3>Their turn ({theirTurnMatches.length})</h3>
-                <ul>
-                  {theirTurnMatches.map((match) => (
-                    <MatchRow key={match.id} match={match} currentUserId={user.id} onSelect={openMatch} />
-                  ))}
-                </ul>
-              </>
-            )}
-          </section>
-        )}
-
-        {selectedMatch && (
-          <section className="conversation" aria-live="polite">
-            <div className="conversation-header">
-              <button type="button" onClick={() => setSelectedId(null)}>
-                Back
-              </button>
-              <h2>{selectedMatch.otherUser.first_name}</h2>
-              <button type="button" onClick={() => setShowProfile((prev) => !prev)}>
-                View profile
-              </button>
-              <button type="button" onClick={toggleDatePlanner}>
-                Plan a date
-              </button>
-            </div>
-
-            {showProfile && (
-              <div className="profile-preview">
-                <img className="photo-placeholder" src={placeholderPhoto} alt={selectedMatch.otherUser.first_name} />
-                <p>
-                  <strong>{selectedMatch.otherUser.first_name}</strong>
-                  {selectedMatch.otherUser.age != null ? `, ${selectedMatch.otherUser.age}` : ""}
-                </p>
-                {selectedMatch.otherUser.job_title && <p>{selectedMatch.otherUser.job_title}</p>}
-                {selectedMatch.otherUser.hometown && <p>{selectedMatch.otherUser.hometown}</p>}
-              </div>
-            )}
-
-            {showDatePlanner && (
-              <div className="date-planner">
-                <p>Nearby venue suggestions:</p>
-                {venuesLoading && <p>Finding nearby places...</p>}
-                {venuesError && <p role="alert">{venuesError}</p>}
-                {venues && venues.length === 0 && <p>No nearby venues found.</p>}
-                {venues && venues.length > 0 && (
-                  <ul>
-                    {venues.map((venue, index) => (
-                      <li key={venue.id ?? index}>
-                        <strong>{venue.name}</strong>
-                        {venue.address ? ` - ${venue.address}` : ""}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-
-            <ul className="message-thread">
-              {threadLoading && !selectedMessages && <li>Loading messages...</li>}
-              {selectedMessages?.length === 0 && (
-                <li className="message-empty">Say hi to {selectedMatch.otherUser.first_name}!</li>
-              )}
-              {selectedMessages?.map((message) => (
-                <li
-                  key={message.id}
-                  className={`message ${message.senderId === user.id ? "message-me" : "message-match"}`}
-                >
-                  {message.text}
+          {matches && matches.length > 0 && (
+            <ul className="chat-list" ref={listRef}>
+              {matches.map((match) => (
+                <li key={match.id} className="chat-list-item">
+                  <button
+                    type="button"
+                    className="chat-row"
+                    data-unread={match.unreadCount > 0 ? "" : undefined}
+                    aria-current={match.id === selectedId}
+                    onClick={() => openMatch(match.id)}
+                  >
+                    {/* HTML Deilverable: Images */}
+                    <img className="chat-row-face" src={photoUrl(match.otherUser)} alt="" aria-hidden="true" />
+                    <span className="chat-row-text">
+                      <span className="chat-row-name">{displayName(match.otherUser)}</span>
+                      <span className="chat-row-preview">{previewText(match, user.id)}</span>
+                    </span>
+                  </button>
+                  {match.unreadCount > 0 && (
+                    <span className="chat-badge" aria-label={`${match.unreadCount} unread`}>
+                      {match.unreadCount}
+                    </span>
+                  )}
                 </li>
               ))}
-              <li ref={threadEndRef} />
             </ul>
+          )}
+        </div>
 
-            <form className="message-form" onSubmit={handleSend}>
-              <label htmlFor="message-draft">Message</label>
-              <input
-                id="message-draft"
-                type="text"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="Type a message..."
-              />
-              <button type="submit" disabled={!draft.trim()}>
-                Send
-              </button>
-            </form>
-          </section>
+        {matches && matches.length > 0 && (
+          <div className="chat-rail">
+            <button type="button" className="chat-chev" aria-label="Scroll chats up" onClick={() => scrollList(-1)}>
+              <ChevronIcon direction="up" />
+            </button>
+            <button type="button" className="chat-chev" aria-label="Scroll chats down" onClick={() => scrollList(1)}>
+              <ChevronIcon direction="down" />
+            </button>
+          </div>
         )}
+
+        {/* Scaffolding: the panel's header, bubbles, composer, planner and profile views land in bullets 4.2-4.7. */}
+        <div className="chat-panel-col">
+          {selectedMatch && (
+            <section className="chat-panel" aria-label={`Conversation with ${displayName(selectedMatch.otherUser)}`}>
+              <header className="conversation-header">
+                <button type="button" onClick={() => setSelectedId(null)}>
+                  Back
+                </button>
+                <h2>{displayName(selectedMatch.otherUser)}</h2>
+              </header>
+
+              <ul className="message-thread">
+                {threadLoading && !selectedMessages && <li>Loading messages...</li>}
+                {selectedMessages?.length === 0 && <li>Say hi to {selectedMatch.otherUser.first_name}!</li>}
+                {selectedMessages?.map((message) => (
+                  <li
+                    key={message.id}
+                    className={`message ${message.senderId === user.id ? "message-me" : "message-match"}`}
+                  >
+                    {message.text}
+                  </li>
+                ))}
+                <li ref={threadEndRef} />
+              </ul>
+
+              <form className="message-form" onSubmit={handleSend}>
+                <label htmlFor="message-draft">Message</label>
+                <input
+                  id="message-draft"
+                  type="text"
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  placeholder="Type your message here..."
+                />
+                <button type="submit" disabled={!draft.trim()}>
+                  Send
+                </button>
+              </form>
+            </section>
+          )}
+        </div>
       </main>
-
-      <Footer />
     </div>
-  );
-}
-
-// One row in the match list - shows the other person's name and either the last message (prefixed "You: " if I sent it) or a "Say hi!" prompt for a message-less match.
-function MatchRow({ match, currentUserId, onSelect }) {
-  return (
-    <li>
-      <button type="button" className="match-row" onClick={() => onSelect(match.id)}>
-        <img className="match-photo-placeholder" src={placeholderPhoto} alt="" aria-hidden="true" />
-        <span className="match-info">
-          <span className="match-name">{match.otherUser.first_name}</span>
-          <span className="match-preview">
-            {match.lastMessage
-              ? `${match.lastMessage.senderId === currentUserId ? "You: " : ""}${match.lastMessage.text}`
-              : "Say hi!"}
-          </span>
-        </span>
-      </button>
-    </li>
   );
 }
