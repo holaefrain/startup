@@ -12,7 +12,7 @@
     "test:db": "node server/testDbConnection.js",
     "seed:users": "node server/seedTestUsers.js",
     "seed:matches": "node server/seedMatches.js",
-    "seed:admin": "node server/seedAdminUser.js",
+    "seed:admin": "node --env-file=.env server/seedAdminUser.js",
     "seed:clear": "node --env-file=.env server/clearTestUsers.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
