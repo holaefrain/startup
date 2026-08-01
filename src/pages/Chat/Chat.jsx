@@ -31,6 +31,16 @@ function previewText(match, currentUserId) {
   return `${prefix}${match.lastMessage.text}`;
 }
 
+// An open path, deliberately: it's filled white but only its two drawn segments are stroked, so the bubble's own bottom border stays unbroken and the tail reads as hanging off it. A closed triangle would stroke a line across the bubble's edge.
+function BubbleTail() {
+  return (
+    <svg className="chat-tail" viewBox="0 0 34 26" aria-hidden="true">
+      <path d="M1.5 0 L1.5 24 L32 0" fill="var(--color-surface)" />
+      <path d="M1.5 0 L1.5 24 L32 0" fill="none" stroke="var(--color-text)" strokeWidth="3" strokeLinejoin="miter" />
+    </svg>
+  );
+}
+
 function ChevronIcon({ direction }) {
   return (
     <svg viewBox="0 0 32 20" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -48,8 +58,10 @@ export default function Chat() {
   const [threadLoading, setThreadLoading] = useState(false);
   const [draft, setDraft] = useState("");
   const [panelMode, setPanelMode] = useState("chat");
+  // What was unread in each match at the moment it was opened. Opening marks a thread read, so without capturing it here the mock's badge beside the newest incoming bubble would vanish the instant you could see it.
+  const [unreadAtOpen, setUnreadAtOpen] = useState({});
   const listRef = useRef(null);
-  const threadEndRef = useRef(null);
+  const threadRef = useRef(null);
 
   // Loads the match list once on mount.
   // Service Deilverable: Frontend calls service endpoints
@@ -66,14 +78,25 @@ export default function Chat() {
   const selectedMatch = matches?.find((match) => match.id === selectedId) ?? null;
   const selectedMessages = selectedId ? messagesByMatch[selectedId] : null;
 
-  // Keeps the newest message in view as the thread grows.
+  // Keeps the newest message in view as the thread grows. Scrolls the container rather than an end-sentinel element, which in this grid would add an empty row's worth of gap below the last bubble.
   useEffect(() => {
-    threadEndRef.current?.scrollIntoView({ block: "nearest" });
+    const thread = threadRef.current;
+    if (thread) thread.scrollTop = thread.scrollHeight;
   }, [selectedMessages]);
 
   function scrollList(direction) {
     listRef.current?.scrollBy({ top: direction * LIST_SCROLL_STEP, behavior: "smooth" });
   }
+
+  function scrollThread(direction) {
+    threadRef.current?.scrollBy({ top: direction * LIST_SCROLL_STEP, behavior: "smooth" });
+  }
+
+  // The newest message from the other person, badged with whatever was unread when this thread was opened - the mock shows that count once, beside the latest incoming bubble, not on every unread message.
+  const newestUnreadId =
+    selectedMatch && unreadAtOpen[selectedMatch.id] > 0
+      ? [...(selectedMessages ?? [])].reverse().find((message) => message.senderId !== user.id)?.id
+      : null;
 
   // Zeroes the badge locally the moment a thread is opened rather than waiting on the request - the read stamp is bookkeeping, and a slow or failed one shouldn't leave a badge sitting on a conversation the user is looking at.
   function markRead(matchId) {
@@ -91,6 +114,8 @@ export default function Chat() {
     setSelectedId(id);
     setDraft("");
     setPanelMode("chat");
+    // Read before markRead zeroes it, and re-set on every open so it always reflects this visit rather than a stale earlier one.
+    setUnreadAtOpen((prev) => ({ ...prev, [id]: matches?.find((match) => match.id === id)?.unreadCount ?? 0 }));
     markRead(id);
 
     if (messagesByMatch[id]) return;
@@ -228,26 +253,50 @@ export default function Chat() {
                 />
               </header>
 
-              {/* Scaffolding: bubbles land in 4.3, the composer in 4.4, and the planner and profile views in 4.5 and 4.6. */}
-              {panelMode !== "chat" && (
-                <p className="chat-panel-pending">
-                  {panelMode === "plan" ? "Venue suggestions" : "Profile"} lands in the next bullet.
-                </p>
-              )}
+              <div className="chat-panel-body">
+                {/* Scaffolding: the planner and profile views land in 4.5 and 4.6. */}
+                {panelMode !== "chat" && (
+                  <p className="chat-panel-pending">
+                    {panelMode === "plan" ? "Venue suggestions" : "Profile"} lands in the next bullet.
+                  </p>
+                )}
 
-              <ul className="message-thread" hidden={panelMode !== "chat"}>
-                {threadLoading && !selectedMessages && <li>Loading messages...</li>}
-                {selectedMessages?.length === 0 && <li>Say hi to {selectedMatch.otherUser.first_name}!</li>}
-                {selectedMessages?.map((message) => (
-                  <li
-                    key={message.id}
-                    className={`message ${message.senderId === user.id ? "message-me" : "message-match"}`}
-                  >
-                    {message.text}
-                  </li>
-                ))}
-                <li ref={threadEndRef} />
-              </ul>
+                <ul className="chat-thread" ref={threadRef} hidden={panelMode !== "chat"}>
+                  {threadLoading && !selectedMessages && <li className="chat-thread-note">Loading messages...</li>}
+                  {selectedMessages?.length === 0 && (
+                    <li className="chat-thread-note">Say hi to {selectedMatch.otherUser.first_name}!</li>
+                  )}
+
+                  {selectedMessages?.map((message) => {
+                    const mine = message.senderId === user.id;
+                    return (
+                      <li key={message.id} className={`chat-msg${mine ? " chat-msg-me" : ""}`}>
+                        <span className="chat-msg-face">
+                          <img src={photoUrl(mine ? user : selectedMatch.otherUser)} alt="" aria-hidden="true" />
+                          {message.id === newestUnreadId && (
+                            <span className="chat-badge chat-badge-msg">{unreadAtOpen[selectedMatch.id]}</span>
+                          )}
+                        </span>
+                        <div className="chat-bubble">
+                          {message.text}
+                          <BubbleTail />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                {panelMode === "chat" && (
+                  <div className="chat-rail chat-thread-rail">
+                    <button type="button" className="chat-chev" aria-label="Scroll conversation up" onClick={() => scrollThread(-1)}>
+                      <ChevronIcon direction="up" />
+                    </button>
+                    <button type="button" className="chat-chev" aria-label="Scroll conversation down" onClick={() => scrollThread(1)}>
+                      <ChevronIcon direction="down" />
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <form className="message-form" hidden={panelMode !== "chat"} onSubmit={handleSend}>
                 <label htmlFor="message-draft">Message</label>

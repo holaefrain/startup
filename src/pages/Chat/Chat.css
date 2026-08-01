@@ -236,48 +236,121 @@
   background: #e9e9e9;
 }
 
-/* The UA stylesheet's [hidden] { display: none } loses to an author `display: flex`, so anything in this panel that sets a display AND toggles `hidden` needs the attribute spelled out. Qualifying the class outranks it at (0,2,0) without reaching for !important. */
-.message-thread[hidden],
+/* The UA stylesheet's [hidden] { display: none } loses to an author `display: flex` or `grid`, so anything in this panel that sets a display AND toggles `hidden` needs the attribute spelled out. Qualifying the class outranks it at (0,2,0) without reaching for !important. */
+.chat-thread[hidden],
 .message-form[hidden] {
   display: none;
 }
 
-/* Scaffolding for bullets 4.3-4.7 - the real bubbles, composer, planner and profile views replace these. */
+/* The panel's middle row. Positioned so the scroll rail can straddle the thread's right edge the way the mock draws it, without being caught by the thread's own scrolling. */
+.chat-panel-body {
+  position: relative;
+  display: grid;
+  min-height: 0;
+}
+
+.chat-thread {
+  display: grid;
+  align-content: start;
+  gap: 1.5rem;
+  min-height: 0;
+  margin: 0;
+  /* Right padding clears the scroll rail overlaying this edge. */
+  padding: 1.25rem 4.5rem 1.25rem 1.25rem;
+  list-style: none;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.chat-thread::-webkit-scrollbar {
+  display: none;
+}
+
+.chat-thread-note {
+  color: var(--color-muted);
+}
+
+.chat-thread-rail {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+}
+
+/* Sender is carried by which side the row sits on, which side its avatar sits on, and which way the tail points - never by fill. Both bubbles are the same white with the same outline, exactly as the mock draws them. */
+.chat-msg {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.65rem;
+}
+
+.chat-msg-me {
+  flex-direction: row-reverse;
+}
+
+.chat-msg-face {
+  position: relative;
+  flex: 0 0 auto;
+  width: 3rem;
+  height: 3rem;
+}
+
+.chat-msg-face img {
+  width: 100%;
+  height: 100%;
+  border: 2px solid #2c4a52;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e9e9e9;
+}
+
+.chat-badge-msg {
+  top: -0.3rem;
+  left: -0.9rem;
+  right: auto;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  font-size: 0.85rem;
+}
+
+.chat-bubble {
+  position: relative;
+  max-width: 22rem;
+  padding: 0.6rem 0.9rem;
+  border: var(--chat-stroke) solid var(--color-text);
+  border-radius: 8px;
+  background: var(--color-surface);
+  font-family: var(--font-display);
+  font-size: 1.03rem;
+  font-style: italic;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+/* Overlaps the bubble's bottom border by the stroke width so the two meet cleanly; the tail's own top edge is unstroked, so the border reads as continuous behind it. */
+.chat-tail {
+  position: absolute;
+  bottom: calc(-1.65rem + var(--chat-stroke));
+  width: 2.1rem;
+  height: 1.65rem;
+  overflow: visible;
+}
+
+.chat-msg .chat-tail {
+  left: 2.1rem;
+}
+
+.chat-msg-me .chat-tail {
+  left: auto;
+  right: 2.1rem;
+  transform: scaleX(-1);
+}
+
+/* Scaffolding for bullets 4.5-4.6 - the planner and profile views replace this. */
 .chat-panel-pending {
   margin: 0;
   padding: 1.25rem;
   color: var(--color-muted);
-}
-
-.message-thread {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  min-height: 0;
-  margin: 0;
-  padding: 1.25rem;
-  list-style: none;
-  overflow-y: auto;
-}
-
-.message {
-  max-width: 75%;
-  padding: 0.6rem 0.9rem;
-  border-radius: 1rem;
-}
-
-.message-me {
-  align-self: flex-end;
-  border-bottom-right-radius: 0.25rem;
-  background: var(--color-accent);
-  color: var(--color-surface);
-}
-
-.message-match {
-  align-self: flex-start;
-  border-bottom-left-radius: 0.25rem;
-  background: var(--color-page);
-  border: 1px solid var(--color-border);
 }
 
 .message-form {
