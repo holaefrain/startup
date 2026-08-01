@@ -492,6 +492,38 @@ export default function Chat() {
       });
   }
 
+  // The newest plan the other person sent that nobody has accepted. Mirrors the server's own rule, so the button never appears for something POST /accept would reject - you can't accept your own plan, or one that's already on.
+  const pendingProposal = [...(selectedMessages ?? [])]
+    .reverse()
+    .find((message) => message.kind === "date" && message.senderId !== user.id && message.dateStatus !== "accepted");
+
+  // Flips the card locally too rather than waiting on the socket - the sender's own echo is de-duped anyway, and a dropped connection shouldn't leave the accepter looking at a plan that still says pending.
+  function handleAccept() {
+    if (!pendingProposal || !selectedMatch) return;
+
+    fetch(`/api/matches/${selectedMatch.id}/messages/${pendingProposal.id}/accept`, { method: "POST" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to accept the plan.");
+        return response.json();
+      })
+      .then((result) => {
+        markPlanAccepted(selectedMatch.id, pendingProposal.id);
+        appendMessage(selectedMatch.id, result.message);
+      })
+      .catch(() => {});
+  }
+
+  function markPlanAccepted(matchId, messageId) {
+    setMessagesByMatch((prev) => {
+      const thread = prev[matchId];
+      if (!thread) return prev;
+      return {
+        ...prev,
+        [matchId]: thread.map((message) => (message.id === messageId ? { ...message, dateStatus: "accepted" } : message)),
+      };
+    });
+  }
+
   function sendText(matchId, text) {
     return fetch(`/api/matches/${matchId}/messages`, {
       method: "POST",
@@ -506,6 +538,7 @@ export default function Chat() {
   useChatSocket({
     enabled: !!user,
     onMessage: appendMessage,
+    onDateAccepted: markPlanAccepted,
     onRead: (matchId) =>
       setMatches((prev) => prev?.map((match) => (match.id === matchId ? { ...match, unreadCount: 0 } : match)) ?? prev),
   });
@@ -664,10 +697,27 @@ export default function Chat() {
                             <span className="chat-badge chat-badge-msg">{unreadAtOpen[selectedMatch.id]}</span>
                           )}
                         </span>
-                        <div className="chat-bubble">
-                          {message.text}
-                          <BubbleTail />
-                        </div>
+                        {message.kind === "date" ? (
+                          <div className="chat-bubble chat-bubble-plan">
+                            <VenueCard venue={message.venue} />
+                            <span className="chat-when-chip">
+                              {message.when.day}
+                              <br />
+                              {message.when.time}
+                            </span>
+                            {message.dateStatus === "accepted" && (
+                              <span className="chat-plan-accepted" aria-label="Accepted">
+                                <CheckIcon />
+                              </span>
+                            )}
+                            <BubbleTail />
+                          </div>
+                        ) : (
+                          <div className="chat-bubble">
+                            {message.text}
+                            <BubbleTail />
+                          </div>
+                        )}
                       </li>
                     );
                   })}
@@ -694,6 +744,15 @@ export default function Chat() {
                 <label className="chat-composer-label" htmlFor="message-draft">
                   {panelMode === "plan" ? "Note to send with the plan" : "Message"}
                 </label>
+
+                {/* type="button" on purpose - this sits inside the composer form, and a default submit would send the draft instead of accepting. */}
+                {panelMode === "chat" && pendingProposal && (
+                  <button type="button" className="chat-accept" onClick={handleAccept}>
+                    Accept
+                    <br />
+                    Date
+                  </button>
+                )}
                 <div className="chat-input-pill">
                   <input
                     id="message-draft"
