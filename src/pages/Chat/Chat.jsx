@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import AppNav from "../../components/AppNav.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
 import { AgeIcon, HeightIcon, LocationIcon } from "../../components/ProfileIcons.jsx";
@@ -13,6 +14,10 @@ const FIELD_SCROLL_STEP = 100; // px per chevron click in the profile's field ta
 
 // Already shown in the profile view's own header rows - the subtitle line and the icon facts - so skipped when rendering the field table below. Mirrors Discover's card.
 const PROFILE_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns"]);
+
+// Matches the breakpoint in Chat.css where the two columns collapse into one. Below it the list *is* the page and the panel takes over on tap, so nothing may be auto-selected - that would both hide the list behind a conversation nobody asked for and mark it read unseen.
+// Must be the exact complement of Chat.css's `max-width: 60rem` stacked block, hence 60.001 rather than 60 - at exactly 60rem a `min-width: 60rem` query still matches while the CSS has already stacked, and auto-select would open a panel covering the list.
+const TWO_COLUMN_QUERY = "(min-width: 60.001rem)";
 
 // The panel is one surface with three modes. The header offers the two you're *not* in, which is why this is a fixed order filtered by the current mode rather than three hand-written pairs - it reproduces all three of the mock's header states on its own.
 const PANEL_MODES = [
@@ -277,9 +282,13 @@ function ChevronIcon({ direction }) {
 
 export default function Chat() {
   const { user } = useAuth();
+  // Set by Discover's match overlay: navigate("/chat", { state: { matchId } }).
+  const requestedMatchId = useLocation().state?.matchId;
   const [matches, setMatches] = useState(null);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  // Only meaningful below the two-column breakpoint, where list and panel share the screen and this decides which one you're looking at.
+  const [panelOpen, setPanelOpen] = useState(false);
   const [messagesByMatch, setMessagesByMatch] = useState({});
   const [threadLoading, setThreadLoading] = useState(false);
   const [draft, setDraft] = useState("");
@@ -346,13 +355,21 @@ export default function Chat() {
   }
 
   // Fetches a match's thread once and caches it - only on success, so a failed request isn't permanently mistaken for "this match really has no messages" and doesn't block a retry on reselect.
-  // Opens the first conversation once the list arrives, so the panel is never a blank half-page. Bullet 4.8 makes this prefer the match Discover navigated here with.
+  // Picks the opening conversation once the list arrives. Discover's "Send a message" navigates here with a matchId, which always wins and always opens the panel - the user asked for that person specifically. Otherwise the first conversation opens, but only on the two-column layout, where the panel isn't covering anything.
   useEffect(() => {
-    if (!selectedId && matches?.length) openMatch(matches[0].id);
+    if (selectedId || !matches?.length) return;
+
+    const requested = requestedMatchId && matches.find((match) => match.id === requestedMatchId);
+    if (requested) {
+      openMatch(requested.id);
+      return;
+    }
+    if (window.matchMedia(TWO_COLUMN_QUERY).matches) openMatch(matches[0].id);
   }, [matches]);
 
   function openMatch(id) {
     setSelectedId(id);
+    setPanelOpen(true);
     setDraft("");
     setPanelMode("chat");
     // Read before markRead zeroes it, and re-set on every open so it always reflects this visit rather than a stale earlier one.
@@ -544,7 +561,7 @@ export default function Chat() {
   });
 
   return (
-    <div id="chat" className={selectedMatch ? "chat-thread-open" : undefined}>
+    <div id="chat" className={panelOpen ? "chat-panel-open" : undefined}>
       <AppNav />
 
       <main className="chat-shell">
@@ -600,6 +617,10 @@ export default function Chat() {
             <section className="chat-panel" aria-label={`Conversation with ${displayName(selectedMatch.otherUser)}`}>
               <header className="chat-panel-head">
                 <div className="chat-panel-id">
+                  {/* Only reachable on the stacked layout, where the panel covers the list; CSS hides it once both columns are visible. */}
+                  <button type="button" className="chat-back" onClick={() => setPanelOpen(false)}>
+                    &lsaquo; Chats
+                  </button>
                   <h2 className="chat-panel-name">{displayName(selectedMatch.otherUser)}</h2>
                   <div className="chat-modes">
                     {PANEL_MODES.filter((mode) => mode.id !== panelMode).map((mode) => (

@@ -1,0 +1,9 @@
+/* Styles for the Footer component, co-located with it the same way AppNav.css is, so it travels complete to every page that renders it. */
+
+.site-footer {
+  width: min(100% - 2rem, 72rem);
+  margin: 0 auto;
+  padding: 2rem 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+}

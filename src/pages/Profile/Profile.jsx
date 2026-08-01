@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import CityAutocompleteInput from "../../components/CityAutocompleteInput.jsx";
 import OptionSelect, { FIELD_OPTIONS, optionLabel } from "../../components/OptionSelect.jsx";
 import { PROFILE_FIELD_GROUPS, ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
+import "./Profile.css";
 
 // These two fields get the city/region autocomplete instead of a plain text input.
 const CITY_AUTOCOMPLETE_FIELDS = new Set(["location", "hometown"]);

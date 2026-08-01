@@ -400,3 +400,13 @@
 .profile-field-scroll button:hover {
   color: var(--color-muted);
 }
+
+/* Moved from index.css: once Chat stopped using this class in its rewrite, Discover became its only consumer. */
+.photo-placeholder {
+  display: grid;
+  min-height: 18rem;
+  place-items: center;
+  background: #e9e9e9;
+  color: var(--color-muted);
+  font-weight: 800;
+}
