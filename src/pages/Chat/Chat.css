@@ -7,9 +7,17 @@
   padding: 6.5rem 0 3rem;
 }
 
-#chat section {
+/* CSS Deilverable: Use of different types of selectors - ID (#chat) + class (.chat-panel) combined, the same pattern Discover.css uses for .swipe-area.
+   The ID is load-bearing, not decoration: index.css styles `#chat section` at (0,1,1), so a bare .chat-panel at (0,1,0) would lose its padding and background to it. */
+#chat .chat-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: min(78vh, 40rem);
   padding: 0;
-  background: none;
+  border: 9px solid var(--color-text);
+  border-radius: 2.6rem;
+  background: var(--color-page);
+  overflow: hidden;
 }
 
 /* The mock's outline weight. Every pill, card and bubble on this page shares it, so it moves together. */
@@ -170,27 +178,85 @@
   min-width: 0;
 }
 
-/* Scaffolding for bullets 4.2-4.7 - the panel's real header, bubbles and composer replace these. */
-.conversation-header {
+.chat-panel-head {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.5rem 1rem;
+  border-bottom: var(--chat-stroke) solid var(--color-text);
 }
 
-.conversation-header h2 {
-  flex: 1;
+.chat-panel-id {
   min-width: 0;
+}
+
+.chat-panel-name {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.6vw, 3.1rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+}
+
+.chat-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.chat-mode {
+  padding: 0.42rem 1.3rem;
+  border: var(--chat-stroke) solid var(--color-text);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.chat-mode:hover {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-surface);
+}
+
+.chat-panel-face {
+  flex: 0 0 auto;
+  width: clamp(3.75rem, 7vw, 5.6rem);
+  height: clamp(3.75rem, 7vw, 5.6rem);
+  border: 3px solid #2c4a52;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e9e9e9;
+}
+
+/* The UA stylesheet's [hidden] { display: none } loses to an author `display: flex`, so anything in this panel that sets a display AND toggles `hidden` needs the attribute spelled out. Qualifying the class outranks it at (0,2,0) without reaching for !important. */
+.message-thread[hidden],
+.message-form[hidden] {
+  display: none;
+}
+
+/* Scaffolding for bullets 4.3-4.7 - the real bubbles, composer, planner and profile views replace these. */
+.chat-panel-pending {
+  margin: 0;
+  padding: 1.25rem;
+  color: var(--color-muted);
 }
 
 .message-thread {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin: 1rem 0;
-  padding: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 1.25rem;
   list-style: none;
-  max-height: 22rem;
   overflow-y: auto;
 }
 
@@ -217,6 +283,8 @@
 .message-form {
   display: flex;
   gap: 0.5rem;
+  max-width: none;
+  padding: 0.85rem 1.25rem 1rem;
 }
 
 .message-form label {

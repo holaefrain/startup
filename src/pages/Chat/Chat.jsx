@@ -7,6 +7,13 @@ import "./Chat.css";
 
 const LIST_SCROLL_STEP = 150; // px per chevron click, roughly one and a half rows
 
+// The panel is one surface with three modes. The header offers the two you're *not* in, which is why this is a fixed order filtered by the current mode rather than three hand-written pairs - it reproduces all three of the mock's header states on its own.
+const PANEL_MODES = [
+  { id: "profile", label: "See Profile" },
+  { id: "chat", label: "See Chat" },
+  { id: "plan", label: "Plan a date" },
+];
+
 // "Efrain C." - the mock shows a first name and a last initial, same shortening Discover's card uses.
 function displayName(person) {
   const initial = person.last_name ? ` ${person.last_name.charAt(0)}.` : "";
@@ -40,6 +47,7 @@ export default function Chat() {
   const [messagesByMatch, setMessagesByMatch] = useState({});
   const [threadLoading, setThreadLoading] = useState(false);
   const [draft, setDraft] = useState("");
+  const [panelMode, setPanelMode] = useState("chat");
   const listRef = useRef(null);
   const threadEndRef = useRef(null);
 
@@ -74,9 +82,15 @@ export default function Chat() {
   }
 
   // Fetches a match's thread once and caches it - only on success, so a failed request isn't permanently mistaken for "this match really has no messages" and doesn't block a retry on reselect.
+  // Opens the first conversation once the list arrives, so the panel is never a blank half-page. Bullet 4.8 makes this prefer the match Discover navigated here with.
+  useEffect(() => {
+    if (!selectedId && matches?.length) openMatch(matches[0].id);
+  }, [matches]);
+
   function openMatch(id) {
     setSelectedId(id);
     setDraft("");
+    setPanelMode("chat");
     markRead(id);
 
     if (messagesByMatch[id]) return;
@@ -193,18 +207,35 @@ export default function Chat() {
           </div>
         )}
 
-        {/* Scaffolding: the panel's header, bubbles, composer, planner and profile views land in bullets 4.2-4.7. */}
         <div className="chat-panel-col">
           {selectedMatch && (
             <section className="chat-panel" aria-label={`Conversation with ${displayName(selectedMatch.otherUser)}`}>
-              <header className="conversation-header">
-                <button type="button" onClick={() => setSelectedId(null)}>
-                  Back
-                </button>
-                <h2>{displayName(selectedMatch.otherUser)}</h2>
+              <header className="chat-panel-head">
+                <div className="chat-panel-id">
+                  <h2 className="chat-panel-name">{displayName(selectedMatch.otherUser)}</h2>
+                  <div className="chat-modes">
+                    {PANEL_MODES.filter((mode) => mode.id !== panelMode).map((mode) => (
+                      <button key={mode.id} type="button" className="chat-mode" onClick={() => setPanelMode(mode.id)}>
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <img
+                  className="chat-panel-face"
+                  src={photoUrl(selectedMatch.otherUser)}
+                  alt={displayName(selectedMatch.otherUser)}
+                />
               </header>
 
-              <ul className="message-thread">
+              {/* Scaffolding: bubbles land in 4.3, the composer in 4.4, and the planner and profile views in 4.5 and 4.6. */}
+              {panelMode !== "chat" && (
+                <p className="chat-panel-pending">
+                  {panelMode === "plan" ? "Venue suggestions" : "Profile"} lands in the next bullet.
+                </p>
+              )}
+
+              <ul className="message-thread" hidden={panelMode !== "chat"}>
                 {threadLoading && !selectedMessages && <li>Loading messages...</li>}
                 {selectedMessages?.length === 0 && <li>Say hi to {selectedMatch.otherUser.first_name}!</li>}
                 {selectedMessages?.map((message) => (
@@ -218,7 +249,7 @@ export default function Chat() {
                 <li ref={threadEndRef} />
               </ul>
 
-              <form className="message-form" onSubmit={handleSend}>
+              <form className="message-form" hidden={panelMode !== "chat"} onSubmit={handleSend}>
                 <label htmlFor="message-draft">Message</label>
                 <input
                   id="message-draft"
