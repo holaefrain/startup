@@ -11,8 +11,8 @@ import { useDiscoverMode } from "../../context/DiscoverModeContext.jsx";
 import placeholderPhoto from "../../assets/img/1920x1080.png";
 import "./Discover.css";
 
-// Already shown elsewhere on the card - name (h2), age/height/location (icon row), gender/pronouns (subtitle line) - so skipped when rendering the field table below.
-const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns"]);
+// Already shown elsewhere on the card - name (h2), age/height/location (icon row), gender/pronouns/sexuality (subtitle line) - so skipped when rendering the field table below. Must stay in step with Chat's PROFILE_HEADER_FIELDS, which splits the same profile the same way.
+const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns", "sexuality"]);
 const FIELD_SCROLL_STEP = 120; // px per chevron click, roughly two table rows
 const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const PEEK_PHOTO_SCALE = 0.82; // how much smaller a non-active carousel slide renders
@@ -89,11 +89,13 @@ export default function Discover() {
     });
   }, [photoIndex, photoCount]);
 
-  // Gender/pronouns read as one italicized line rather than table rows - only the ones the profile actually has are joined, so a profile missing one doesn't leave a dangling separator.
+  // Gender/pronouns/sexuality read as one italicized line rather than table rows - only the ones the profile actually has are joined, so a profile missing one doesn't leave a dangling separator. Sexuality fills the mock's third slot: the mock labels it "Interested in", but interested_in is a matching preference the server deliberately withholds (see projectVisibleFields in userSchema.js), so it can never reach this component.
   const subtitleParts = profile
-    ? [profile.gender && optionLabel("gender", profile.gender), profile.pronouns && optionLabel("pronouns", profile.pronouns)].filter(
-        Boolean
-      )
+    ? [
+        profile.gender && optionLabel("gender", profile.gender),
+        profile.pronouns && optionLabel("pronouns", profile.pronouns),
+        profile.sexuality && optionLabel("sexuality", profile.sexuality),
+      ].filter(Boolean)
     : [];
 
   const iconFacts = profile

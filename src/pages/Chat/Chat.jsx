@@ -14,7 +14,7 @@ const LIST_SCROLL_STEP = 150; // px per chevron click, roughly one and a half ro
 const FIELD_SCROLL_STEP = 100; // px per chevron click in the profile's field table, roughly two rows
 
 // Already shown in the profile view's own header rows - the subtitle line and the icon facts - so skipped when rendering the field table below. Mirrors Discover's card.
-const PROFILE_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns"]);
+const PROFILE_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns", "sexuality"]);
 
 // Matches the breakpoint in Chat.css where the two columns collapse into one. Below it the list *is* the page and the panel takes over on tap, so nothing may be auto-selected - that would both hide the list behind a conversation nobody asked for and mark it read unseen.
 // Must be the exact complement of Chat.css's `max-width: 60rem` stacked block, hence 60.001 rather than 60 - at exactly 60rem a `min-width: 60rem` query still matches while the CSS has already stacked, and auto-select would open a panel covering the list.
@@ -152,8 +152,12 @@ function VenueCard({ venue }) {
 function MatchProfile({ person, photoIndex, onPhoto, fieldTableRef }) {
   const photoCount = person.photoKeys?.length ?? 0;
 
-  // Only the parts this person actually filled in, so a missing one never leaves a dangling separator.
-  const subtitle = [person.gender && optionLabel("gender", person.gender), person.pronouns && optionLabel("pronouns", person.pronouns)]
+  // Only the parts this person actually filled in, so a missing one never leaves a dangling separator. Same three parts Discover's subtitleParts builds - these two views claim to show the same information, so they pick the same fields.
+  const subtitle = [
+    person.gender && optionLabel("gender", person.gender),
+    person.pronouns && optionLabel("pronouns", person.pronouns),
+    person.sexuality && optionLabel("sexuality", person.sexuality),
+  ]
     .filter(Boolean)
     .join(" | ");
 

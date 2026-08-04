@@ -30,26 +30,33 @@
   line-height: 0.88;
 }
 
+/* Bold italic is the register Chat uses for every secondary line - same family and weight as .chat-profile-subtitle, sized up for a page that shows one person rather than a panel that shows twenty. */
 .profile-subtitle {
   margin: 0.5rem 0 0;
-  font-size: 1.1rem;
+  font-family: var(--font-display);
+  font-size: 1.28rem;
   font-style: italic;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .profile-icon-facts {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.25rem;
-  margin: 0.75rem 0 0;
+  gap: 1rem;
+  margin: 0.9rem 0 0;
   padding: 0;
   list-style: none;
+  font-family: var(--font-display);
+  font-size: 1.16rem;
+  font-weight: 600;
 }
 
+/* No size set on the svg: ProfileIcons draws each at 1em so it takes the type size of the row it sits in, which is the whole point of that component. */
 .profile-icon-facts li {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  font-weight: 700;
+  gap: 0.3rem;
 }
 
 .profile-icon-facts svg {
