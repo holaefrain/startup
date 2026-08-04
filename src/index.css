@@ -209,6 +209,35 @@ form button,
   gap: 0.75rem;
 }
 
+/* The mock's scroll control, shared by Chat's three rails and Discover's field card - a bare pair of chevrons beside the thing they scroll, never a scrollbar. Lives here rather than in a page file because it has two owners; anything that positions a rail (Chat's .chat-thread-rail) stays with that page. */
+.scroll-rail {
+  display: grid;
+  align-content: center;
+  gap: 0.65rem;
+}
+
+.scroll-chev {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 2.1rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text);
+}
+
+.scroll-chev svg {
+  width: 100%;
+  height: 100%;
+}
+
+.scroll-chev:hover {
+  background: none;
+  border-color: transparent;
+  color: var(--color-nav);
+}
+
 @media (max-width: 640px) {
   main,
   header,

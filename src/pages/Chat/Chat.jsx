@@ -194,10 +194,10 @@ function MatchProfile({ person, photoIndex, onPhoto, fieldTableRef }) {
                 </tbody>
               </table>
             </div>
-            <div className="chat-rail">
+            <div className="scroll-rail">
               <button
                 type="button"
-                className="chat-chev"
+                className="scroll-chev"
                 aria-label="Scroll details up"
                 onClick={() => fieldTableRef.current?.scrollBy({ top: -FIELD_SCROLL_STEP, behavior: "smooth" })}
               >
@@ -205,7 +205,7 @@ function MatchProfile({ person, photoIndex, onPhoto, fieldTableRef }) {
               </button>
               <button
                 type="button"
-                className="chat-chev"
+                className="scroll-chev"
                 aria-label="Scroll details down"
                 onClick={() => fieldTableRef.current?.scrollBy({ top: FIELD_SCROLL_STEP, behavior: "smooth" })}
               >
@@ -602,11 +602,11 @@ export default function Chat() {
         </div>
 
         {matches && matches.length > 0 && (
-          <div className="chat-rail">
-            <button type="button" className="chat-chev" aria-label="Scroll chats up" onClick={() => scrollList(-1)}>
+          <div className="scroll-rail">
+            <button type="button" className="scroll-chev" aria-label="Scroll chats up" onClick={() => scrollList(-1)}>
               <ChevronIcon direction="up" />
             </button>
-            <button type="button" className="chat-chev" aria-label="Scroll chats down" onClick={() => scrollList(1)}>
+            <button type="button" className="scroll-chev" aria-label="Scroll chats down" onClick={() => scrollList(1)}>
               <ChevronIcon direction="down" />
             </button>
           </div>
@@ -745,11 +745,11 @@ export default function Chat() {
                 </ul>
 
                 {panelMode === "chat" && (
-                  <div className="chat-rail chat-thread-rail">
-                    <button type="button" className="chat-chev" aria-label="Scroll conversation up" onClick={() => scrollThread(-1)}>
+                  <div className="scroll-rail chat-thread-rail">
+                    <button type="button" className="scroll-chev" aria-label="Scroll conversation up" onClick={() => scrollThread(-1)}>
                       <ChevronIcon direction="up" />
                     </button>
-                    <button type="button" className="chat-chev" aria-label="Scroll conversation down" onClick={() => scrollThread(1)}>
+                    <button type="button" className="scroll-chev" aria-label="Scroll conversation down" onClick={() => scrollThread(1)}>
                       <ChevronIcon direction="down" />
                     </button>
                   </div>
