@@ -12,14 +12,12 @@
   background: none;
 }
 
+/* [facts] [scroll rail] [photos] - the same three-column skeleton .chat-shell uses, so both pages put their scroll control in the same place. No border, radius or surface: the mock sits the content straight on the page rather than in a card. */
 .profile-card {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-  background: var(--color-surface);
+  display: grid;
+  grid-template-columns: minmax(17rem, 22rem) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0 2.25rem;
 }
 
 .profile-card .profile-name {
@@ -57,9 +55,7 @@
 }
 
 .profile-photos {
-  flex: 61 1 16rem;
   min-width: 0;
-  margin-top: 2rem;
 }
 
 .swipe-btn {
@@ -328,20 +324,11 @@
 }
 
 .profile-meta {
-  flex: 39 3 20rem;
   min-width: 0;
-  padding-left: clamp(1.5rem, 8vw, 6rem);
-}
-
-.profile-field-panel {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  margin-top: 1rem;
 }
 
 .profile-field-table-wrap {
-  flex: 1;
+  margin-top: 1rem;
   max-height: 16rem;
   overflow-y: auto;
   border: 1px solid var(--color-text);
@@ -372,28 +359,6 @@
 }
 
 .profile-field-table td {
-  color: var(--color-muted);
-}
-
-.profile-field-scroll {
-  display: grid;
-  flex-shrink: 0;
-  gap: 0.25rem;
-}
-
-.profile-field-scroll button {
-  display: grid;
-  width: 2rem;
-  height: 1.75rem;
-  place-items: center;
-  border: none;
-  background: none;
-  color: var(--color-text);
-  font-size: 1.4rem;
-  line-height: 1;
-}
-
-.profile-field-scroll button:hover {
   color: var(--color-muted);
 }
 

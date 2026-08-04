@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import AppNav from "../../components/AppNav.jsx";
+import ChevronIcon from "../../components/ChevronIcon.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
 import { AgeIcon, HeightIcon, LocationIcon } from "../../components/ProfileIcons.jsx";
 import { ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
@@ -268,14 +269,6 @@ function SendIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M22 2 2 10.4l7.3 2.6 9.3-7.4-7.1 8.4 2.7 7.6z" />
-    </svg>
-  );
-}
-
-function ChevronIcon({ direction }) {
-  return (
-    <svg viewBox="0 0 32 20" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={direction === "up" ? "M3 17 16 4l13 13" : "M3 3 16 16l13-13"} />
     </svg>
   );
 }

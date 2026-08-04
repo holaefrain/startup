@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { animate } from "animejs";
 import AppNav from "../../components/AppNav.jsx";
+import ChevronIcon from "../../components/ChevronIcon.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
 import { AgeIcon, HeightIcon, LocationIcon } from "../../components/ProfileIcons.jsx";
 import { ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
@@ -234,30 +235,30 @@ export default function Discover() {
                   </ul>
                 )}
 
-                <div className="profile-field-panel">
-                  <div className="profile-field-table-wrap" ref={fieldTableRef}>
-                    <table className="profile-field-table">
-                      <tbody>
-                        {ALL_PROFILE_FIELDS.filter(
-                          (field) => !CARD_HEADER_FIELDS.has(field.key) && profile[field.key]
-                        ).map((field) => (
-                          <tr key={field.key}>
-                            <th scope="row">{field.label}</th>
-                            <td>{optionLabel(field.key, profile[field.key])}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="profile-field-scroll">
-                    <button type="button" aria-label="Scroll fields up" onClick={() => scrollFields(-1)}>
-                      ⌃
-                    </button>
-                    <button type="button" aria-label="Scroll fields down" onClick={() => scrollFields(1)}>
-                      ⌄
-                    </button>
-                  </div>
+                <div className="profile-field-table-wrap" ref={fieldTableRef}>
+                  <table className="profile-field-table">
+                    <tbody>
+                      {ALL_PROFILE_FIELDS.filter(
+                        (field) => !CARD_HEADER_FIELDS.has(field.key) && profile[field.key]
+                      ).map((field) => (
+                        <tr key={field.key}>
+                          <th scope="row">{field.label}</th>
+                          <td>{optionLabel(field.key, profile[field.key])}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
+              </div>
+
+              {/* The rail sits between the facts and the photos as its own column, the same place Chat puts it - not nested beside the table, which is where it lived when the card was a two-column flex row. */}
+              <div className="scroll-rail">
+                <button type="button" className="scroll-chev" aria-label="Scroll fields up" onClick={() => scrollFields(-1)}>
+                  <ChevronIcon direction="up" />
+                </button>
+                <button type="button" className="scroll-chev" aria-label="Scroll fields down" onClick={() => scrollFields(1)}>
+                  <ChevronIcon direction="down" />
+                </button>
               </div>
 
               <div className="profile-photos">
