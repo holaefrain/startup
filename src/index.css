@@ -232,10 +232,16 @@ form button,
   height: 100%;
 }
 
-.scroll-chev:hover {
+.scroll-chev:hover:not(:disabled) {
   background: none;
   border-color: transparent;
   color: var(--color-nav);
+}
+
+/* Dimmed rather than hidden: a chevron that vanishes at the end of a list makes the rail jump, and the remaining one shifts under the cursor. */
+.scroll-chev:disabled {
+  cursor: default;
+  opacity: 0.25;
 }
 
 @media (max-width: 640px) {

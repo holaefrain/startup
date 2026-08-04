@@ -13,7 +13,6 @@ import "./Discover.css";
 
 // Already shown elsewhere on the card - name (h2), age/height/location (icon row), gender/pronouns/sexuality (subtitle line) - so skipped when rendering the field table below. Must stay in step with Chat's PROFILE_HEADER_FIELDS, which splits the same profile the same way.
 const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns", "sexuality"]);
-const FIELD_SCROLL_STEP = 120; // px per chevron click, roughly two table rows
 const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const PEEK_PHOTO_SCALE = 0.82; // how much smaller a non-active carousel slide renders
 
@@ -34,10 +33,25 @@ export default function Discover() {
   const [error, setError] = useState("");
   // Holds { matchId, profile } for the just-matched person, or null - `profile` is the swiped profile object swipe() already has in scope (photoKeys, first_name, id and all), not a separate fetch.
   const [matchNotice, setMatchNotice] = useState(null);
-  const fieldTableRef = useRef(null);
+  const fieldCardRef = useRef(null);
+  // Which chevrons are still worth pressing. Both true when the card doesn't overflow at all, which disables the pair rather than leaving two controls that do nothing.
+  const [fieldEdges, setFieldEdges] = useState({ atStart: true, atEnd: true });
 
+  function syncFieldEdges() {
+    const card = fieldCardRef.current;
+    if (!card) return;
+    const furthest = card.scrollHeight - card.clientHeight;
+    setFieldEdges({ atStart: card.scrollTop <= 1, atEnd: card.scrollTop >= furthest - 1 });
+  }
+
+  // One fact per press, measured off the real distance between two rows rather than a guessed pixel step, so the card never comes to rest mid-row. Falls back to a single row's height when only one is rendered (nothing to scroll then anyway).
   function scrollFields(direction) {
-    fieldTableRef.current?.scrollBy({ top: direction * FIELD_SCROLL_STEP, behavior: "smooth" });
+    const card = fieldCardRef.current;
+    if (!card) return;
+    const rows = card.querySelectorAll(".profile-fact-row");
+    const pitch = rows.length > 1 ? rows[1].offsetTop - rows[0].offsetTop : (rows[0]?.offsetHeight ?? 0);
+    const reduceMotion = window.matchMedia(REDUCE_MOTION_QUERY).matches;
+    card.scrollBy({ top: direction * pitch, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
   useEffect(() => {
@@ -111,10 +125,11 @@ export default function Discover() {
       ].filter(Boolean)
     : [];
 
-  // The field table's scroll container is the same DOM node across swipes (React just updates its contents), so without this a scroll position left on one profile would carry into the next.
+  // The fact card's scroll container is the same DOM node across swipes (React just updates its contents), so without this a scroll position left on one profile would carry into the next. Re-reads the edges afterwards because the next profile may have fewer facts, and a card that no longer overflows must disable both chevrons.
   useEffect(() => {
-    if (fieldTableRef.current) fieldTableRef.current.scrollTop = 0;
-  }, [profile?.id]);
+    if (fieldCardRef.current) fieldCardRef.current.scrollTop = 0;
+    syncFieldEdges();
+  }, [profile?.id, visibleFields.length]);
 
   // Advances immediately regardless of the swipe request's latency - the swipe write doesn't need to block the UI. Captures `profile` before advancing since `index` (and therefore `profile`) changes right away.
   function swipe(action) {
@@ -244,7 +259,7 @@ export default function Discover() {
 
                 {/* HTML Deilverable: Proper HTML element usage - label/value pairs are a definition list, not a table. Each value is a pill, so a fact reads as the same kind of object as Chat's "See Profile" control. */}
                 {visibleFields.length > 0 && (
-                  <div className="profile-fact-card" ref={fieldTableRef}>
+                  <div className="profile-fact-card" ref={fieldCardRef} onScroll={syncFieldEdges}>
                     <dl className="profile-fact-list">
                       {visibleFields.map((field) => (
                         <div className="profile-fact-row" key={field.key}>
@@ -259,10 +274,22 @@ export default function Discover() {
 
               {/* The rail sits between the facts and the photos as its own column, the same place Chat puts it - not nested beside the table, which is where it lived when the card was a two-column flex row. */}
               <div className="scroll-rail">
-                <button type="button" className="scroll-chev" aria-label="Scroll fields up" onClick={() => scrollFields(-1)}>
+                <button
+                  type="button"
+                  className="scroll-chev"
+                  aria-label="Scroll facts up"
+                  disabled={fieldEdges.atStart}
+                  onClick={() => scrollFields(-1)}
+                >
                   <ChevronIcon direction="up" />
                 </button>
-                <button type="button" className="scroll-chev" aria-label="Scroll fields down" onClick={() => scrollFields(1)}>
+                <button
+                  type="button"
+                  className="scroll-chev"
+                  aria-label="Scroll facts down"
+                  disabled={fieldEdges.atEnd}
+                  onClick={() => scrollFields(1)}
+                >
                   <ChevronIcon direction="down" />
                 </button>
               </div>
