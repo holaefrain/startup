@@ -28,6 +28,10 @@
   --color-alert: #ff3b30;
   --color-go: #0acf52;
   --color-star: #ffc107;
+  /* Discover's like button, kept a shade off --color-alert so the two never read as the same signal - that red still means an unread count and nothing else. */
+  --color-like: #d91032;
+  /* The mock's outline weight. Every pill, card, bubble and photo frame across Chat and Discover shares it, so it moves together. */
+  --stroke: 3px;
   /* The mock's heavy grotesque, used for names, headings and control labels; Inter (set on :root above) stays the body and data face. */
   --font-display: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --radius-control: 0.5rem;

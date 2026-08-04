@@ -20,9 +20,7 @@
   overflow: hidden;
 }
 
-/* The mock's outline weight. Every pill, card and bubble on this page shares it, so it moves together. */
 .chat-shell {
-  --chat-stroke: 3px;
   display: grid;
   grid-template-columns: minmax(17rem, 21rem) auto minmax(0, 1fr);
   align-items: center;
@@ -71,7 +69,7 @@
   width: 100%;
   min-height: auto;
   padding: 0.55rem 1.4rem 0.55rem 0.55rem;
-  border: var(--chat-stroke) solid var(--color-text);
+  border: var(--stroke) solid var(--color-text);
   border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-text);
@@ -184,7 +182,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 1.15rem 1.5rem 1rem;
-  border-bottom: var(--chat-stroke) solid var(--color-text);
+  border-bottom: var(--stroke) solid var(--color-text);
 }
 
 .chat-panel-id {
@@ -208,7 +206,7 @@
 
 .chat-mode {
   padding: 0.42rem 1.3rem;
-  border: var(--chat-stroke) solid var(--color-text);
+  border: var(--stroke) solid var(--color-text);
   border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-text);
@@ -317,7 +315,7 @@
   position: relative;
   max-width: 22rem;
   padding: 0.6rem 0.9rem;
-  border: var(--chat-stroke) solid var(--color-text);
+  border: var(--stroke) solid var(--color-text);
   border-radius: 8px;
   background: var(--color-surface);
   font-family: var(--font-display);
@@ -330,7 +328,7 @@
 /* Overlaps the bubble's bottom border by the stroke width so the two meet cleanly; the tail's own top edge is unstroked, so the border reads as continuous behind it. */
 .chat-tail {
   position: absolute;
-  bottom: calc(-1.65rem + var(--chat-stroke));
+  bottom: calc(-1.65rem + var(--stroke));
   width: 2.1rem;
   height: 1.65rem;
   overflow: visible;
@@ -450,7 +448,7 @@
 
 .chat-scope-pill {
   padding: 0.4rem 1.4rem;
-  border: var(--chat-stroke) solid var(--color-text);
+  border: var(--stroke) solid var(--color-text);
   border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-text);
@@ -515,7 +513,7 @@
   width: 100%;
   min-height: auto;
   padding: 0.5rem 1.15rem 0.5rem 0.5rem;
-  border: var(--chat-stroke) solid var(--color-text);
+  border: var(--stroke) solid var(--color-text);
   border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-text);
@@ -1003,7 +1001,7 @@
   min-height: auto;
   margin-bottom: 0.5rem;
   padding: 0.25rem 0.85rem 0.25rem 0.6rem;
-  border: var(--chat-stroke) solid var(--color-text);
+  border: var(--stroke) solid var(--color-text);
   border-radius: 999px;
   background: var(--color-surface);
   color: var(--color-text);
