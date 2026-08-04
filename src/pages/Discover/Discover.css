@@ -336,39 +336,58 @@
   min-width: 0;
 }
 
-.profile-field-table-wrap {
-  margin-top: 1rem;
-  max-height: 16rem;
+/* shadcn's Card > CardContent > (row + Separator)* tree with each value as a Badge, written in plain CSS rather than installed - Card is a div, Badge is a span and Separator is an hr, so the three of them aren't worth five runtime dependencies. Wears this product's skin either way: the outline is --stroke and the badge is .chat-mode's pill. Scrollbar hidden because the chevron rail beside it is the intended control, same as Chat's list. */
+.profile-fact-card {
+  margin-top: 1.25rem;
+  max-height: 22rem;
   overflow-y: auto;
-  border: 1px solid var(--color-text);
+  scrollbar-width: none;
+  border: var(--stroke) solid var(--color-text);
+  border-radius: 1.5rem;
+  background: var(--color-surface);
 }
 
-.profile-field-table {
-  width: 100%;
-  border-collapse: collapse;
+.profile-fact-card::-webkit-scrollbar {
+  display: none;
 }
 
-.profile-field-table th,
-.profile-field-table td {
-  padding: 0.6rem 0.85rem;
-  border-bottom: 1px solid var(--color-border);
-  text-align: left;
-  font-weight: 400;
+.profile-fact-list {
+  display: grid;
+  margin: 0;
+  padding: 0.35rem 1.5rem;
 }
 
-.profile-field-table tr:last-child th,
-.profile-field-table tr:last-child td {
-  border-bottom: none;
+.profile-fact-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.62rem 0;
 }
 
-.profile-field-table th {
-  width: 40%;
-  border-right: 1px solid var(--color-border);
-  font-weight: 700;
+/* The Separator, as a border rather than an element - one row's rule is the next one's top edge, so no divider can ever end up orphaned at the top or bottom of the list. */
+.profile-fact-row + .profile-fact-row {
+  border-top: 2px solid var(--color-border);
 }
 
-.profile-field-table td {
-  color: var(--color-muted);
+.profile-fact-label {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 1.14rem;
+  font-weight: 500;
+}
+
+.profile-fact-value {
+  margin: 0;
+  padding: 0.28rem 1.05rem;
+  border: 2px solid var(--color-text);
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  text-align: right;
 }
 
 /* Moved from index.css: once Chat stopped using this class in its rewrite, Discover became its only consumer. */

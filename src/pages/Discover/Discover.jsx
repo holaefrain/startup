@@ -98,6 +98,11 @@ export default function Discover() {
       ].filter(Boolean)
     : [];
 
+  // Everything not already in the header block, and only what this person actually filled in - a blank value never becomes an empty row.
+  const visibleFields = profile
+    ? ALL_PROFILE_FIELDS.filter((field) => !CARD_HEADER_FIELDS.has(field.key) && profile[field.key])
+    : [];
+
   const iconFacts = profile
     ? [
         profile.age != null && { key: "age", icon: <AgeIcon />, value: profile.age },
@@ -237,20 +242,19 @@ export default function Discover() {
                   </ul>
                 )}
 
-                <div className="profile-field-table-wrap" ref={fieldTableRef}>
-                  <table className="profile-field-table">
-                    <tbody>
-                      {ALL_PROFILE_FIELDS.filter(
-                        (field) => !CARD_HEADER_FIELDS.has(field.key) && profile[field.key]
-                      ).map((field) => (
-                        <tr key={field.key}>
-                          <th scope="row">{field.label}</th>
-                          <td>{optionLabel(field.key, profile[field.key])}</td>
-                        </tr>
+                {/* HTML Deilverable: Proper HTML element usage - label/value pairs are a definition list, not a table. Each value is a pill, so a fact reads as the same kind of object as Chat's "See Profile" control. */}
+                {visibleFields.length > 0 && (
+                  <div className="profile-fact-card" ref={fieldTableRef}>
+                    <dl className="profile-fact-list">
+                      {visibleFields.map((field) => (
+                        <div className="profile-fact-row" key={field.key}>
+                          <dt className="profile-fact-label">{field.label}</dt>
+                          <dd className="profile-fact-value">{optionLabel(field.key, profile[field.key])}</dd>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
+                    </dl>
+                  </div>
+                )}
               </div>
 
               {/* The rail sits between the facts and the photos as its own column, the same place Chat puts it - not nested beside the table, which is where it lived when the card was a two-column flex row. */}
