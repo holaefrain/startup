@@ -1,11 +1,8 @@
-/* Discover has no header/footer and its card is meant to fill the viewport, unlike every other page's centered 72rem column - overrides the shared main/section rules in index.css rather than replacing them, so match-banner/loading/error states inside <main> keep their grid/gap layout. */
+/* Discover has no header/footer, so it takes the same wider column Chat does rather than the shared 72rem one - overrides the main/section rules in index.css rather than replacing them, so match-banner/loading/error states inside <main> keep their grid/gap layout. The top padding is what clears AppNav's fixed 4rem toggle; margin stays inherited from index.css's `main { margin: 0 auto }` so the column still centers. */
 #discover main {
-  width: 100%;
+  width: min(100% - 3rem, 78rem);
   max-width: none;
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-  align-content: center;
+  padding: 6.5rem 0 3rem;
 }
 
 /* CSS Deilverable: Use of different types of selectors - ID (#discover) + class (.swipe-area) combined here */
@@ -13,7 +10,6 @@
   padding: 0;
   border: none;
   background: none;
-  margin-top: 5rem;
 }
 
 .profile-card {
