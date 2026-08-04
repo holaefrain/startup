@@ -20,12 +20,14 @@
   gap: 0 2.25rem;
 }
 
+/* Runs larger than Chat's .chat-title on purpose: "Chats" labels a list, but this is the content itself, and Discover shows one person where Chat shows twenty. Weight, tracking and line-height stay Chat's, so it reads as the same face doing more. Keeps specifying all five of margin/family/size/weight/line-height - Profile.jsx carries .profile-name too, and Profile.css counts on this rule outranking it. */
 .profile-card .profile-name {
   margin: 0;
-  font-family:'Times New Roman', Times, serif;
-  font-size: clamp(10rem, 5vw, 3.5rem);
-  font-weight: 2000;
-  line-height: 1;
+  font-family: var(--font-display);
+  font-size: clamp(3.1rem, 5.6vw, 5.2rem);
+  font-weight: 900;
+  letter-spacing: -0.038em;
+  line-height: 0.88;
 }
 
 .profile-subtitle {
