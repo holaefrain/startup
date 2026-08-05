@@ -276,23 +276,35 @@
   color: var(--color-surface);
 }
 
-.profile-field-visibility {
-  flex-shrink: 0;
+/* Only a hit area: .switch-track and .switch-knob inside it carry the entire appearance, so everything index.css's `button` rule would paint is stripped back off. The hover reset is what keeps this from flashing --color-accent-strong, the last teal left on the page. */
+.profile-field-switch {
+  display: inline-flex;
+  flex: none;
   min-height: auto;
-  padding: 0.35rem 0.7rem;
+  padding: 0;
+  border: none;
   border-radius: 999px;
-  background: var(--color-surface);
-  color: var(--color-muted);
-  font-size: 0.85rem;
-  font-weight: 700;
+  background: none;
 }
 
-.profile-field-visibility:disabled {
+.profile-field-switch:hover {
+  background: none;
+  border-color: transparent;
+}
+
+.profile-field-switch:disabled {
   cursor: default;
-  opacity: 0.7;
+  opacity: 0.4;
 }
 
-.profile-field-visibility:not(:disabled):hover {
-  background: var(--color-accent-strong);
-  color: var(--color-surface);
+/* Names why the switch beside it is dead. Set in the display face rather than a mono one - the page has two families and a 0.68rem annotation isn't worth a third - and uppercased so it reads as a note on the control rather than as another value. */
+.profile-field-lock {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  white-space: nowrap;
 }

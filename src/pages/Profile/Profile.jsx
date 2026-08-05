@@ -90,10 +90,18 @@ export default function Profile() {
     patchProfile({ visibility: { [key]: next } }).then((response) => response.ok && refreshUser());
   }
 
-  function visibilityLabel(field) {
-    if (field.locked === "visible") return "Always Visible";
-    if (field.locked === "hidden") return "Always Hidden";
-    return visibility[field.key] === "hidden" ? "Hidden" : "Visible";
+  // Whether this field currently reaches other users. A field nobody has ever touched counts as shown, which is the same default the server applies - see projectVisibleFields in server/userSchema.js, where only an explicit "hidden" withholds one.
+  function isShown(field) {
+    if (field.locked === "visible") return true;
+    if (field.locked === "hidden") return false;
+    return visibility[field.key] !== "hidden";
+  }
+
+  // The word beside a locked switch, saying why it can't be pressed rather than leaving it greyed with no explanation. Null for the fields you actually control, which is most of them.
+  function lockMark(field) {
+    if (field.locked === "visible") return "Always";
+    if (field.locked === "hidden") return "Never";
+    return null;
   }
 
   return (
@@ -148,6 +156,7 @@ export default function Profile() {
                 <dl className="profile-field-list">
                   {group.fields.map((field) => {
                     const displayValue = optionLabel(field.key, values[field.key]);
+                    const mark = lockMark(field);
 
                     return (
                       <div className="profile-field-row" key={field.key}>
@@ -203,13 +212,25 @@ export default function Profile() {
                             </button>
                           )}
 
+                          {mark && <span className="profile-field-lock">{mark}</span>}
+
+                          {/* The same switch AppNav's real/demo toggle uses - one component, so "on" looks identical wherever the app asks a yes/no question. Labelled per field because the track carries no text of its own. */}
                           <button
                             type="button"
-                            className="profile-field-visibility"
+                            className="profile-field-switch"
+                            role="switch"
+                            aria-checked={isShown(field)}
+                            aria-label={
+                              field.locked
+                                ? `${field.label} is ${field.locked === "visible" ? "always" : "never"} shown on your profile`
+                                : `Show ${field.label} on your profile`
+                            }
                             disabled={!!field.locked}
                             onClick={() => toggleVisibility(field.key)}
                           >
-                            {visibilityLabel(field)}
+                            <span className="switch-track" aria-hidden="true">
+                              <span className="switch-knob" />
+                            </span>
                           </button>
                         </dd>
                       </div>
