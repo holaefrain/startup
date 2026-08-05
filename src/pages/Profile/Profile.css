@@ -1,5 +1,5 @@
 /* Profile-exclusive styles, split out of index.css alongside Discover.css, Chat.css and AppNav.css - every selector here is used only by src/pages/Profile/Profile.jsx.
-   .profile-name lives here rather than in index.css even though Discover's markup also carries the class: Discover.css's own .profile-card .profile-name fully specifies margin, family, size, weight and line-height, so it never depended on this rule. */
+   .profile-name is worn by Discover's card too and this file is bundled globally, so its rule below is scoped to #profile rather than left bare - it can then carry properties Discover never sets without reaching the other page, instead of depending on Discover's .profile-card .profile-name happening to re-specify every one of them. */
 
 /* Profile has no header/footer either now, so it takes the same wider column Discover and Chat do rather than the shared 72rem one. The top padding is what clears AppNav's fixed 4rem toggle, which the removed <header> used to reserve space for; margin stays inherited from index.css's `main { margin: 0 auto }` so the column still centers, and the grid/gap there stays too so the sections keep stacking until the three-column shell replaces it. */
 #profile main {
@@ -16,11 +16,10 @@
   background: none;
 }
 
+/* Left-aligned now that this block is the page's masthead rather than a centered avatar card: the name is the title, so it sets the column's left edge the way Discover's and Chat's headings set theirs. Spacing moves to the children's own margins because the three parts want different gaps, which a single grid gap can't give them. */
 .profile-header {
   display: grid;
-  justify-items: center;
-  gap: 0.25rem;
-  text-align: center;
+  gap: 0;
 }
 
 .profile-photo-grid {
@@ -29,6 +28,7 @@
   gap: 0.75rem;
   width: 100%;
   max-width: 32rem;
+  margin-bottom: 2rem;
 }
 
 .profile-photo-tile {
@@ -89,13 +89,24 @@
   font-size: 0.9rem;
 }
 
-.profile-name {
-  margin-top: 0.5rem;
+/* Discover's .profile-card .profile-name treatment, capped lower: that card shows "Elena G." while this page shows the whole surname, so 5.2rem would push most real names onto three lines. Scoped to #profile so none of this can reach the class Discover's card also carries. */
+#profile .profile-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 4.6vw, 4.1rem);
+  font-weight: 900;
+  letter-spacing: -0.038em;
+  line-height: 0.88;
 }
 
+/* The bold italic register every secondary line in Chat and Discover uses. Not muted: the subtitle it mirrors (.profile-subtitle) isn't either, and on this page the email is identification rather than an aside. */
 .profile-email {
-  margin: 0;
-  color: var(--color-muted);
+  margin: 0.55rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.18rem;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .profile-field-group ul {
