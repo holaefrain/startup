@@ -1,6 +1,21 @@
 /* Profile-exclusive styles, split out of index.css alongside Discover.css, Chat.css and AppNav.css - every selector here is used only by src/pages/Profile/Profile.jsx.
    .profile-name lives here rather than in index.css even though Discover's markup also carries the class: Discover.css's own .profile-card .profile-name fully specifies margin, family, size, weight and line-height, so it never depended on this rule. */
 
+/* Profile has no header/footer either now, so it takes the same wider column Discover and Chat do rather than the shared 72rem one. The top padding is what clears AppNav's fixed 4rem toggle, which the removed <header> used to reserve space for; margin stays inherited from index.css's `main { margin: 0 auto }` so the column still centers, and the grid/gap there stays too so the sections keep stacking until the three-column shell replaces it. */
+#profile main {
+  width: min(100% - 3rem, 78rem);
+  max-width: none;
+  padding: 6.5rem 0 3rem;
+}
+
+/* CSS Deilverable: Use of different types of selectors - ID (#profile) + class combined, the same trick #discover .swipe-area uses: (1,1,0) beats index.css's `#profile section` at (1,0,1) on the class column. Both section classes are listed because neutralising only one would leave the other wearing the old white card. */
+#profile .profile-header,
+#profile .profile-field-group {
+  padding: 0;
+  border: none;
+  background: none;
+}
+
 .profile-header {
   display: grid;
   justify-items: center;
