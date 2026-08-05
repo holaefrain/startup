@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
-import Footer from "../../components/Footer.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import CityAutocompleteInput from "../../components/CityAutocompleteInput.jsx";
 import OptionSelect, { FIELD_OPTIONS, optionLabel } from "../../components/OptionSelect.jsx";
@@ -99,11 +98,7 @@ export default function Profile() {
 
   return (
     <div id="profile">
-      <header>
-        <h1>Profile</h1>
-        <p>Your public dating profile details will appear here.</p>
-        <AppNav />
-      </header>
+      <AppNav />
 
       <main>
         <section className="profile-header">
@@ -210,8 +205,6 @@ export default function Profile() {
             </section>
           ))}
       </main>
-
-      <Footer />
     </div>
   );
 }

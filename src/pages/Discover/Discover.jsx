@@ -46,7 +46,11 @@ export default function Discover() {
 
   function syncFieldEdges() {
     const card = fieldCardRef.current;
-    if (!card) return;
+    // Resets rather than bailing when there's no card: swiping from a scrolled profile to one with no facts at all would otherwise leave the last profile's edges behind.
+    if (!card) {
+      setFieldEdges({ atStart: true, atEnd: true });
+      return;
+    }
     const furthest = card.scrollHeight - card.clientHeight;
     setFieldEdges({ atStart: card.scrollTop <= 1, atEnd: card.scrollTop >= furthest - 1 });
   }
@@ -269,27 +273,29 @@ export default function Discover() {
                 )}
               </div>
 
-              {/* The rail sits between the facts and the photos as its own column, the same place Chat puts it - not nested beside the table, which is where it lived when the card was a two-column flex row. */}
-              <div className="scroll-rail">
-                <button
-                  type="button"
-                  className="scroll-chev"
-                  aria-label="Scroll facts up"
-                  disabled={fieldEdges.atStart}
-                  onClick={() => scrollFields(-1)}
-                >
-                  <ChevronIcon direction="up" />
-                </button>
-                <button
-                  type="button"
-                  className="scroll-chev"
-                  aria-label="Scroll facts down"
-                  disabled={fieldEdges.atEnd}
-                  onClick={() => scrollFields(1)}
-                >
-                  <ChevronIcon direction="down" />
-                </button>
-              </div>
+              {/* The rail sits between the facts and the photos as its own column, the same place Chat puts it - not nested beside the table, which is where it lived when the card was a two-column flex row. Absent entirely when there are no facts, so the grid's middle column collapses instead of holding a control with nothing to scroll. */}
+              {visibleFields.length > 0 && (
+                <div className="scroll-rail">
+                  <button
+                    type="button"
+                    className="scroll-chev"
+                    aria-label="Scroll facts up"
+                    disabled={fieldEdges.atStart}
+                    onClick={() => scrollFields(-1)}
+                  >
+                    <ChevronIcon direction="up" />
+                  </button>
+                  <button
+                    type="button"
+                    className="scroll-chev"
+                    aria-label="Scroll facts down"
+                    disabled={fieldEdges.atEnd}
+                    onClick={() => scrollFields(1)}
+                  >
+                    <ChevronIcon direction="down" />
+                  </button>
+                </div>
+              )}
 
               <div className="profile-photos">
                 {photoCount > 0 ? (
