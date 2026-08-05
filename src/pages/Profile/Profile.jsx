@@ -11,6 +11,9 @@ const CITY_AUTOCOMPLETE_FIELDS = new Set(["location", "hometown"]);
 // Matches server/profile.js's MAX_PHOTOS, which itself matches server/index.js's signup upload cap.
 const MAX_PHOTOS = 8;
 
+// The most details this profile could ever put in front of someone. interested_in is excluded because the server withholds it from every projection no matter what the visibility map says (see LOCKED_HIDDEN_FIELDS in server/userSchema.js) - counting it would leave the total permanently one short of itself.
+const SHOWABLE_FIELD_COUNT = ALL_PROFILE_FIELDS.filter((field) => field.locked !== "hidden").length;
+
 function patchProfile(body) {
   return fetch("/api/profile", {
     method: "PATCH",
@@ -104,6 +107,11 @@ export default function Profile() {
     return null;
   }
 
+  // Counts what another user would actually be shown, which needs both halves: Discover drops a field that's switched off and equally drops one that's simply empty, so a blank field nobody hid still isn't on your profile.
+  const shownCount = values
+    ? ALL_PROFILE_FIELDS.filter((field) => isShown(field) && values[field.key]).length
+    : 0;
+
   return (
     <div id="profile">
       <AppNav />
@@ -144,6 +152,12 @@ export default function Profile() {
             </h1>
           )}
           {user?.email && <p className="profile-email">{user.email}</p>}
+
+          {values && (
+            <p className="profile-public-count">
+              <b>{shownCount}</b> of {SHOWABLE_FIELD_COUNT} details visible on Discover
+            </p>
+          )}
         </section>
 
         {values &&
