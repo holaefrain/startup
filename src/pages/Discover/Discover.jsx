@@ -14,10 +14,19 @@ import "./Discover.css";
 const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns", "sexuality"]);
 const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
-function MatchHeartIcon() {
+// One heart for the page: the like button and the match overlay's badge are the same gesture, so they get the same shape. Sizes to 1em by default, which the swipe button overrides in CSS since it scales off the photo rather than off type.
+function HeartIcon() {
   return (
     <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true">
       <path d="M12 21s-7.5-4.87-10.2-9.36C.1 8.9 1.4 5 5.1 4.2c2-.44 3.9.4 5 2 .1.15.3.25.5.25s.4-.1.5-.25c1.1-1.6 3-2.44 5-2 3.7.8 5 4.7 3.3 7.44C19.5 16.13 12 21 12 21Z" />
+    </svg>
+  );
+}
+
+function CrossIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" aria-hidden="true">
+      <path d="M4 4 20 20M20 4 4 20" />
     </svg>
   );
 }
@@ -149,7 +158,7 @@ export default function Discover() {
           disabled={!profile}
           onClick={() => swipe("like")}
         >
-          ♥
+          <HeartIcon />
         </button>
         <button
           id="dislike-btn"
@@ -159,7 +168,7 @@ export default function Discover() {
           disabled={!profile}
           onClick={() => swipe("pass")}
         >
-          ✕
+          <CrossIcon />
         </button>
       </>
     );
@@ -180,7 +189,7 @@ export default function Discover() {
         <div className="match-photos">
           <img className="match-photo match-photo-you" src={yourPhoto} alt="Your profile" />
           <span className="match-heart">
-            <MatchHeartIcon />
+            <HeartIcon />
           </span>
           <img className="match-photo match-photo-them" src={theirPhoto} alt={matchedProfile.first_name} />
         </div>
@@ -305,7 +314,7 @@ export default function Discover() {
                       disabled={photoIndex === 0}
                       onClick={() => goToPhoto(photoIndex - 1)}
                     >
-                      ‹
+                      <ChevronIcon direction="left" />
                     </button>
                     <button
                       type="button"
@@ -314,7 +323,7 @@ export default function Discover() {
                       disabled={photoIndex === photoCount - 1}
                       onClick={() => goToPhoto(photoIndex + 1)}
                     >
-                      ›
+                      <ChevronIcon direction="right" />
                     </button>
 
                     {renderSwipeButtons()}

@@ -80,10 +80,14 @@
   border: none;
   border-radius: 50%;
   color: var(--color-surface);
-  font-size: calc(var(--sq) * 0.1);
-  line-height: 1;
   transform: translate(50%, 50%);
   transition: filter 0.14s ease, opacity 0.14s ease, transform 0.14s ease;
+}
+
+/* Percentage, not 1em - these scale off the photo, so overriding HeartIcon's own 1em keeps the glyph locked to the button rather than to the page's type scale. */
+.swipe-btn svg {
+  width: 56%;
+  height: 56%;
 }
 
 /* Centered on the square's two bottom corners - the translate(50%, 50%) above puts each button's middle exactly on its corner point, so it half-overhangs the photo the way the mock draws it. Red carries the affirmative here and black the dismissal, which keeps --color-alert free to go on meaning an unread count and nothing else. */
@@ -199,9 +203,12 @@
   border-radius: 50%;
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: calc(var(--sq) * 0.04);
-  line-height: 1;
   transform: translate(50%, -50%);
+}
+
+.photo-carousel-nav svg {
+  width: 46%;
+  height: 46%;
 }
 
 .photo-carousel-nav:hover:not(:disabled) {
