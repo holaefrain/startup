@@ -331,7 +331,7 @@
   height: 3.25rem;
   place-items: center;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ff5577, #c8102e);
+  background: var(--color-like);
   color: var(--color-surface);
   font-size: 1.5rem;
   box-shadow: 0 0.4rem 1rem rgb(0 0 0 / 35%);
@@ -449,4 +449,45 @@
   background: #e9e9e9;
   color: var(--color-muted);
   font-weight: 800;
+}
+
+/* The same width Chat stacks at, so the two pages are never in different layouts at the same viewport. Photos move above the facts: on a phone the photo is the decision and the facts are the detail you scroll down to. */
+@media (max-width: 60rem) {
+  #discover main {
+    width: min(100% - 1.5rem, 34rem);
+    padding: 5.5rem 0 2rem;
+  }
+
+  .profile-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .profile-photos {
+    grid-row: 1;
+  }
+
+  .profile-meta {
+    grid-row: 2;
+  }
+
+  /* Scoped to #discover because .scroll-rail is shared - unscoped, this would hide Chat's three rails too. The card drops its cap and simply grows once the rail that scrolled it is gone, the same trade .chat-list makes. */
+  #discover .scroll-rail {
+    display: none;
+  }
+
+  .profile-fact-card {
+    max-height: none;
+  }
+
+  .photo-carousel {
+    --sq: min(66vw, 22rem, 73.5cqw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-carousel-slide,
+  .swipe-btn {
+    transition: none;
+  }
 }
