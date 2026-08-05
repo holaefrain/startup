@@ -39,6 +39,11 @@
   display: none;
 }
 
+/* The shell starts its columns at the top, which would pin the chevrons beside the masthead rather than beside the list they scroll. Centring just this one puts them against the middle of the groups column, where Chat and Discover both sit theirs. Scoped to #profile because .scroll-rail has three other owners. */
+#profile .scroll-rail {
+  align-self: center;
+}
+
 /* Left-aligned now that this block is the page's masthead rather than a centered avatar card: the name is the title, so it sets the column's left edge the way Discover's and Chat's headings set theirs. Spacing moves to the children's own margins because the three parts want different gaps, which a single grid gap can't give them. */
 .profile-header {
   display: grid;

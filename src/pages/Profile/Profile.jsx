@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
+import ChevronIcon from "../../components/ChevronIcon.jsx";
 import CrossIcon from "../../components/CrossIcon.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import CityAutocompleteInput from "../../components/CityAutocompleteInput.jsx";
@@ -9,6 +10,9 @@ import "./Profile.css";
 
 // These two fields get the city/region autocomplete instead of a plain text input.
 const CITY_AUTOCOMPLETE_FIELDS = new Set(["location", "hometown"]);
+const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+// Discover's rail moves its card one fact at a time, but that card holds a single short list where this column holds every field the profile has - three cards and twenty-odd rows - so a press there would barely move it. The pitch is still measured off two real rows; only the multiplier differs.
+const ROWS_PER_PRESS = 3;
 // Matches server/profile.js's MAX_PHOTOS, which itself matches server/index.js's signup upload cap.
 const MAX_PHOTOS = 8;
 
@@ -35,6 +39,34 @@ export default function Profile() {
   const [addingPhoto, setAddingPhoto] = useState(false);
   const [removingIndex, setRemovingIndex] = useState(null);
   const [photoError, setPhotoError] = useState("");
+  const groupsRef = useRef(null);
+  // Which chevrons are still worth pressing. Both true when the column doesn't overflow at all, which disables the pair rather than leaving two controls that do nothing.
+  const [groupEdges, setGroupEdges] = useState({ atStart: true, atEnd: true });
+
+  function syncGroupEdges() {
+    const column = groupsRef.current;
+    if (!column) {
+      setGroupEdges({ atStart: true, atEnd: true });
+      return;
+    }
+    const furthest = column.scrollHeight - column.clientHeight;
+    setGroupEdges({ atStart: column.scrollTop <= 1, atEnd: column.scrollTop >= furthest - 1 });
+  }
+
+  // Measured off the real distance between two rows rather than a guessed pixel step, so the column never comes to rest mid-row. Falls back to a single row's height when only one is rendered, which is a column with nothing to scroll anyway.
+  function scrollGroups(direction) {
+    const column = groupsRef.current;
+    if (!column) return;
+    const rows = column.querySelectorAll(".profile-field-row");
+    const pitch = rows.length > 1 ? rows[1].offsetTop - rows[0].offsetTop : (rows[0]?.offsetHeight ?? 0);
+    const reduceMotion = window.matchMedia(REDUCE_MOTION_QUERY).matches;
+    column.scrollBy({ top: direction * pitch * ROWS_PER_PRESS, behavior: reduceMotion ? "auto" : "smooth" });
+  }
+
+  // The cards don't exist until `values` has been seeded, so the first measurement has to wait for them - measured any earlier the column has no content, and both chevrons would sit enabled over nothing.
+  useEffect(() => {
+    syncGroupEdges();
+  }, [values]);
 
   useEffect(() => {
     if (!user || values !== null) return;
@@ -165,7 +197,29 @@ export default function Profile() {
             )}
           </section>
 
-          <div className="profile-groups">
+          {/* Its own column between the identity block and the groups, the same place Chat and Discover put theirs. */}
+          <div className="scroll-rail">
+            <button
+              type="button"
+              className="scroll-chev"
+              aria-label="Scroll details up"
+              disabled={groupEdges.atStart}
+              onClick={() => scrollGroups(-1)}
+            >
+              <ChevronIcon direction="up" />
+            </button>
+            <button
+              type="button"
+              className="scroll-chev"
+              aria-label="Scroll details down"
+              disabled={groupEdges.atEnd}
+              onClick={() => scrollGroups(1)}
+            >
+              <ChevronIcon direction="down" />
+            </button>
+          </div>
+
+          <div className="profile-groups" ref={groupsRef} onScroll={syncGroupEdges}>
             {values &&
               PROFILE_FIELD_GROUPS.map((group) => (
                 <section key={group.title} className="profile-field-group">
