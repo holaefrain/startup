@@ -16,16 +16,40 @@
   background: none;
 }
 
+/* [identity] [rail] [groups] - the same three-column skeleton .chat-shell and Discover's .profile-card use, so all three signed-in pages put their scroll control in the same column. Aligned to the start rather than centred: the right column is a long list that scrolls on its own, and centring it against a masthead whose height changes with the photo count would leave the two drifting. */
+.profile-shell {
+  display: grid;
+  grid-template-columns: minmax(16rem, 21rem) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0 2.25rem;
+}
+
+/* The scroll container the rail drives. Scrollbar hidden because the chevrons beside it are the intended control - the column still scrolls by wheel, trackpad and keyboard, exactly as Chat's list and Discover's fact card do. Capped against the viewport as well as in rem so a short window doesn't leave the whole page scrolling to reach the last group. */
+.profile-groups {
+  display: grid;
+  align-content: start;
+  gap: 2rem;
+  min-width: 0;
+  max-height: min(70vh, 44rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.profile-groups::-webkit-scrollbar {
+  display: none;
+}
+
 /* Left-aligned now that this block is the page's masthead rather than a centered avatar card: the name is the title, so it sets the column's left edge the way Discover's and Chat's headings set theirs. Spacing moves to the children's own margins because the three parts want different gaps, which a single grid gap can't give them. */
 .profile-header {
   display: grid;
   gap: 0;
 }
 
+/* Two up rather than auto-fill: the identity column is a fixed 21rem now, and auto-filling at a 6.5rem minimum would pack three cramped tiles into it whose corner controls are nearly as wide as the photo. */
 .profile-photo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.15rem;
   width: 100%;
   max-width: 32rem;
   margin-bottom: 2rem;

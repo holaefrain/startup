@@ -118,148 +118,152 @@ export default function Profile() {
       <AppNav />
 
       <main>
-        <section className="profile-header">
-          <div className="profile-photo-grid">
-            {(user?.photoKeys ?? []).map((_, index) => (
-              <div key={index} className="profile-photo-tile">
-                <img src={`/api/photos/${user.id}/${index}`} alt={`Photo ${index + 1}`} />
+        <div className="profile-shell">
+          <section className="profile-header">
+            <div className="profile-photo-grid">
+              {(user?.photoKeys ?? []).map((_, index) => (
+                <div key={index} className="profile-photo-tile">
+                  <img src={`/api/photos/${user.id}/${index}`} alt={`Photo ${index + 1}`} />
 
-                {/* The first photo does more work than the rest and nothing on this page said so: it's the avatar on every Chat row, message and panel (faceOf in Chat.jsx), both faces in Discover's match overlay, and the photo Discover's carousel opens on. Plain text rather than an icon so it's read out as well as seen. */}
-                {index === 0 && <span className="profile-photo-main">Main</span>}
-                <button
-                  type="button"
-                  className="profile-photo-remove"
-                  aria-label={`Remove photo ${index + 1}`}
-                  onClick={() => handleRemovePhoto(index)}
-                  disabled={removingIndex === index}
-                >
-                  <CrossIcon />
-                </button>
-              </div>
-            ))}
-            {(user?.photoKeys?.length ?? 0) < MAX_PHOTOS && (
-              <label className="profile-photo-add" htmlFor="profile-photo-input">
-                {addingPhoto ? "Adding..." : "+ Add Photo"}
-              </label>
+                  {/* The first photo does more work than the rest and nothing on this page said so: it's the avatar on every Chat row, message and panel (faceOf in Chat.jsx), both faces in Discover's match overlay, and the photo Discover's carousel opens on. Plain text rather than an icon so it's read out as well as seen. */}
+                  {index === 0 && <span className="profile-photo-main">Main</span>}
+                  <button
+                    type="button"
+                    className="profile-photo-remove"
+                    aria-label={`Remove photo ${index + 1}`}
+                    onClick={() => handleRemovePhoto(index)}
+                    disabled={removingIndex === index}
+                  >
+                    <CrossIcon />
+                  </button>
+                </div>
+              ))}
+              {(user?.photoKeys?.length ?? 0) < MAX_PHOTOS && (
+                <label className="profile-photo-add" htmlFor="profile-photo-input">
+                  {addingPhoto ? "Adding..." : "+ Add Photo"}
+                </label>
+              )}
+              <input id="profile-photo-input" type="file" accept="image/*" onChange={handleAddPhoto} hidden />
+            </div>
+            {photoError && (
+              <p role="alert" className="profile-photo-error">
+                {photoError}
+              </p>
             )}
-            <input id="profile-photo-input" type="file" accept="image/*" onChange={handleAddPhoto} hidden />
-          </div>
-          {photoError && (
-            <p role="alert" className="profile-photo-error">
-              {photoError}
-            </p>
-          )}
-          {/* The page's only h1 now that the "Profile" header is gone - you are the title. Joined rather than interpolated so a missing last name doesn't leave a trailing space, and falls back because both names are editable from the rows below and can be committed empty (signup marks them required, the server doesn't enforce it). */}
-          {values && (
-            <h1 className="profile-name">
-              {[values.first_name, values.last_name].filter(Boolean).join(" ") || "Your profile"}
-            </h1>
-          )}
-          {user?.email && <p className="profile-email">{user.email}</p>}
+            {/* The page's only h1 now that the "Profile" header is gone - you are the title. Joined rather than interpolated so a missing last name doesn't leave a trailing space, and falls back because both names are editable from the rows below and can be committed empty (signup marks them required, the server doesn't enforce it). */}
+            {values && (
+              <h1 className="profile-name">
+                {[values.first_name, values.last_name].filter(Boolean).join(" ") || "Your profile"}
+              </h1>
+            )}
+            {user?.email && <p className="profile-email">{user.email}</p>}
 
-          {values && (
-            <p className="profile-public-count">
-              <b>{shownCount}</b> of {SHOWABLE_FIELD_COUNT} details visible on Discover
-            </p>
-          )}
-        </section>
+            {values && (
+              <p className="profile-public-count">
+                <b>{shownCount}</b> of {SHOWABLE_FIELD_COUNT} details visible on Discover
+              </p>
+            )}
+          </section>
 
-        {values &&
-          PROFILE_FIELD_GROUPS.map((group) => (
-            <section key={group.title} className="profile-field-group">
-              <h2 className="profile-group-title">{group.title}</h2>
+          <div className="profile-groups">
+            {values &&
+              PROFILE_FIELD_GROUPS.map((group) => (
+                <section key={group.title} className="profile-field-group">
+                  <h2 className="profile-group-title">{group.title}</h2>
 
-              {/* HTML Deilverable: Proper HTML element usage - the same card > dl > row > dt/dd tree Discover's fact card uses, so one field renders as the same object on both pages. The label is plain text rather than part of a button: only the value is editable, which is what lets the edit controls sit as siblings instead of nested inside one. */}
-              <div className="profile-field-card">
-                <dl className="profile-field-list">
-                  {group.fields.map((field) => {
-                    const displayValue = optionLabel(field.key, values[field.key]);
-                    const shown = isShown(field);
-                    const mark = lockMark(field);
+                  {/* HTML Deilverable: Proper HTML element usage - the same card > dl > row > dt/dd tree Discover's fact card uses, so one field renders as the same object on both pages. The label is plain text rather than part of a button: only the value is editable, which is what lets the edit controls sit as siblings instead of nested inside one. */}
+                  <div className="profile-field-card">
+                    <dl className="profile-field-list">
+                      {group.fields.map((field) => {
+                        const displayValue = optionLabel(field.key, values[field.key]);
+                        const shown = isShown(field);
+                        const mark = lockMark(field);
 
-                    return (
-                      // data-hidden is what ghosts the row. Read from the same `shown` the switch below reports, so the two can't ever disagree about whether this field reaches anyone.
-                      <div className="profile-field-row" data-hidden={!shown} key={field.key}>
-                        <dt className="profile-field-label">{field.label}</dt>
-                        <dd className="profile-field-control">
-                          {editingKey === field.key ? (
-                            CITY_AUTOCOMPLETE_FIELDS.has(field.key) ? (
-                              <CityAutocompleteInput
-                                autoFocus
-                                name={field.key}
-                                value={values[field.key]}
-                                onChange={(event) => handleFieldInput(field.key, event.target.value)}
-                                onBlur={() => commitField(field.key)}
-                                onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
-                                onCommit={(description, placeId) =>
-                                  commitField(
-                                    field.key,
-                                    description,
-                                    field.key === "location" && placeId ? { location_place_id: placeId } : null
-                                  )
+                        return (
+                          // data-hidden is what ghosts the row. Read from the same `shown` the switch below reports, so the two can't ever disagree about whether this field reaches anyone.
+                          <div className="profile-field-row" data-hidden={!shown} key={field.key}>
+                            <dt className="profile-field-label">{field.label}</dt>
+                            <dd className="profile-field-control">
+                              {editingKey === field.key ? (
+                                CITY_AUTOCOMPLETE_FIELDS.has(field.key) ? (
+                                  <CityAutocompleteInput
+                                    autoFocus
+                                    name={field.key}
+                                    value={values[field.key]}
+                                    onChange={(event) => handleFieldInput(field.key, event.target.value)}
+                                    onBlur={() => commitField(field.key)}
+                                    onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
+                                    onCommit={(description, placeId) =>
+                                      commitField(
+                                        field.key,
+                                        description,
+                                        field.key === "location" && placeId ? { location_place_id: placeId } : null
+                                      )
+                                    }
+                                  />
+                                ) : FIELD_OPTIONS[field.key] ? (
+                                  <OptionSelect
+                                    field={field.key}
+                                    placeholder={`Select ${field.label}`}
+                                    autoFocus
+                                    value={values[field.key]}
+                                    onChange={(event) => {
+                                      const value = event.target.value;
+                                      handleFieldInput(field.key, value);
+                                      commitField(field.key, value);
+                                    }}
+                                  />
+                                ) : (
+                                  <input
+                                    autoFocus
+                                    value={values[field.key]}
+                                    onChange={(event) => handleFieldInput(field.key, event.target.value)}
+                                    onBlur={() => commitField(field.key)}
+                                    onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
+                                  />
+                                )
+                              ) : (
+                                // Labelled by what pressing it does rather than by the value it shows - tabbing a column of pills would otherwise announce bare values with nothing saying which field each one belongs to.
+                                <button
+                                  type="button"
+                                  className={`profile-field-value${displayValue ? "" : " profile-field-value-empty"}`}
+                                  aria-label={`Edit ${field.label}`}
+                                  onClick={() => setEditingKey(field.key)}
+                                >
+                                  {displayValue || "Add"}
+                                </button>
+                              )}
+
+                              {mark && <span className="profile-field-lock">{mark}</span>}
+
+                              {/* The same switch AppNav's real/demo toggle uses - one component, so "on" looks identical wherever the app asks a yes/no question. Labelled per field because the track carries no text of its own. */}
+                              <button
+                                type="button"
+                                className="profile-field-switch"
+                                role="switch"
+                                aria-checked={shown}
+                                aria-label={
+                                  field.locked
+                                    ? `${field.label} is ${field.locked === "visible" ? "always" : "never"} shown on your profile`
+                                    : `Show ${field.label} on your profile`
                                 }
-                              />
-                            ) : FIELD_OPTIONS[field.key] ? (
-                              <OptionSelect
-                                field={field.key}
-                                placeholder={`Select ${field.label}`}
-                                autoFocus
-                                value={values[field.key]}
-                                onChange={(event) => {
-                                  const value = event.target.value;
-                                  handleFieldInput(field.key, value);
-                                  commitField(field.key, value);
-                                }}
-                              />
-                            ) : (
-                              <input
-                                autoFocus
-                                value={values[field.key]}
-                                onChange={(event) => handleFieldInput(field.key, event.target.value)}
-                                onBlur={() => commitField(field.key)}
-                                onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
-                              />
-                            )
-                          ) : (
-                            // Labelled by what pressing it does rather than by the value it shows - tabbing a column of pills would otherwise announce bare values with nothing saying which field each one belongs to.
-                            <button
-                              type="button"
-                              className={`profile-field-value${displayValue ? "" : " profile-field-value-empty"}`}
-                              aria-label={`Edit ${field.label}`}
-                              onClick={() => setEditingKey(field.key)}
-                            >
-                              {displayValue || "Add"}
-                            </button>
-                          )}
-
-                          {mark && <span className="profile-field-lock">{mark}</span>}
-
-                          {/* The same switch AppNav's real/demo toggle uses - one component, so "on" looks identical wherever the app asks a yes/no question. Labelled per field because the track carries no text of its own. */}
-                          <button
-                            type="button"
-                            className="profile-field-switch"
-                            role="switch"
-                            aria-checked={shown}
-                            aria-label={
-                              field.locked
-                                ? `${field.label} is ${field.locked === "visible" ? "always" : "never"} shown on your profile`
-                                : `Show ${field.label} on your profile`
-                            }
-                            disabled={!!field.locked}
-                            onClick={() => toggleVisibility(field.key)}
-                          >
-                            <span className="switch-track" aria-hidden="true">
-                              <span className="switch-knob" />
-                            </span>
-                          </button>
-                        </dd>
-                      </div>
-                    );
-                  })}
-                </dl>
-              </div>
-            </section>
-          ))}
+                                disabled={!!field.locked}
+                                onClick={() => toggleVisibility(field.key)}
+                              >
+                                <span className="switch-track" aria-hidden="true">
+                                  <span className="switch-knob" />
+                                </span>
+                              </button>
+                            </dd>
+                          </div>
+                        );
+                      })}
+                    </dl>
+                  </div>
+                </section>
+              ))}
+          </div>
+        </div>
       </main>
     </div>
   );
