@@ -129,8 +129,8 @@ export default function AppNav() {
             disabled={resetting}
           >
             <span>Real</span>
-            <span className="app-nav-mode-track" aria-hidden="true">
-              <span className="app-nav-mode-knob" />
+            <span className="switch-track" aria-hidden="true">
+              <span className="switch-knob" />
             </span>
             <span>Demo</span>
           </button>

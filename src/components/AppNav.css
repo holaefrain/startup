@@ -108,33 +108,7 @@
   cursor: default;
 }
 
-.app-nav-mode-track {
-  position: relative;
-  width: 2.75rem;
-  height: 1.5rem;
-  border-radius: 999px;
-  background: rgb(0 0 0 / 25%);
-  transition: background 0.2s ease;
-}
-
-.app-nav-mode-toggle[aria-checked="true"] .app-nav-mode-track {
-  background: var(--color-go);
-}
-
-.app-nav-mode-knob {
-  position: absolute;
-  top: 0.15rem;
-  left: 0.15rem;
-  width: 1.2rem;
-  height: 1.2rem;
-  border-radius: 50%;
-  background: #ffffff;
-  transition: transform 0.2s ease;
-}
-
-.app-nav-mode-toggle[aria-checked="true"] .app-nav-mode-knob {
-  transform: translateX(1.25rem);
-}
+/* The track and knob themselves now live in index.css as .switch-track/.switch-knob, shared with Profile's per-field visibility toggles - only the row this switch sits in is AppNav's business. */
 
 .app-nav-reset-demo {
   justify-self: start;
@@ -206,9 +180,3 @@
   color: #ffffff;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .app-nav-mode-track,
-  .app-nav-mode-knob {
-    transition: none;
-  }
-}

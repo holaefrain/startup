@@ -244,6 +244,36 @@ form button,
   opacity: 0.25;
 }
 
+/* The mock's toggle switch, shared by AppNav's real/demo mode and Profile's per-field visibility - lives here rather than with either owner for the same reason .scroll-rail does. The track and knob are the whole component; whatever sits around them (AppNav puts a word either side, Profile puts it after a pill) stays with that page. */
+.switch-track {
+  position: relative;
+  width: 2.75rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 25%);
+  transition: background 0.2s ease;
+}
+
+.switch-knob {
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.2s ease;
+}
+
+/* Driven by the ARIA state rather than a modifier class, so what the switch looks like and what a screen reader announces can never disagree - there is only one source of truth to set. */
+[role="switch"][aria-checked="true"] .switch-track {
+  background: var(--color-go);
+}
+
+[role="switch"][aria-checked="true"] .switch-knob {
+  transform: translateX(1.25rem);
+}
+
 @media (max-width: 640px) {
   main,
   header,
@@ -253,5 +283,13 @@ form button,
 
   .controls {
     flex-direction: column;
+  }
+}
+
+/* Moved here with the switch itself - the knob still travels and the track still changes colour, they just arrive rather than slide. */
+@media (prefers-reduced-motion: reduce) {
+  .switch-track,
+  .switch-knob {
+    transition: none;
   }
 }
