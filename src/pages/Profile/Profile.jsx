@@ -129,10 +129,11 @@ export default function Profile() {
               {photoError}
             </p>
           )}
+          {/* The page's only h1 now that the "Profile" header is gone - you are the title. Joined rather than interpolated so a missing last name doesn't leave a trailing space, and falls back because both names are editable from the rows below and can be committed empty (signup marks them required, the server doesn't enforce it). */}
           {values && (
-            <h2 className="profile-name">
-              {values.first_name} {values.last_name}
-            </h2>
+            <h1 className="profile-name">
+              {[values.first_name, values.last_name].filter(Boolean).join(" ") || "Your profile"}
+            </h1>
           )}
           {user?.email && <p className="profile-email">{user.email}</p>}
         </section>
