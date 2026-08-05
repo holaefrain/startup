@@ -156,10 +156,12 @@ export default function Profile() {
                 <dl className="profile-field-list">
                   {group.fields.map((field) => {
                     const displayValue = optionLabel(field.key, values[field.key]);
+                    const shown = isShown(field);
                     const mark = lockMark(field);
 
                     return (
-                      <div className="profile-field-row" key={field.key}>
+                      // data-hidden is what ghosts the row. Read from the same `shown` the switch below reports, so the two can't ever disagree about whether this field reaches anyone.
+                      <div className="profile-field-row" data-hidden={!shown} key={field.key}>
                         <dt className="profile-field-label">{field.label}</dt>
                         <dd className="profile-field-control">
                           {editingKey === field.key ? (
@@ -219,7 +221,7 @@ export default function Profile() {
                             type="button"
                             className="profile-field-switch"
                             role="switch"
-                            aria-checked={isShown(field)}
+                            aria-checked={shown}
                             aria-label={
                               field.locked
                                 ? `${field.label} is ${field.locked === "visible" ? "always" : "never"} shown on your profile`

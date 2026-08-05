@@ -155,6 +155,7 @@
   font-family: var(--font-display);
   font-size: 1.14rem;
   font-weight: 500;
+  transition: opacity 0.18s ease;
 }
 
 /* Resets the UA's margin-inline-start on <dd>, which would otherwise indent every value by 40px. */
@@ -186,6 +187,7 @@
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: opacity 0.18s ease, background 0.14s ease, color 0.14s ease;
 }
 
 /* Beats index.css's `button:hover` on source order, not specificity - both are (0,1,1), and this file loads after it. The same footing .chat-mode and .chat-scope-pill already stand on. */
@@ -206,6 +208,21 @@
 
 .profile-field-value-empty:hover {
   border-color: var(--color-text);
+}
+
+/* The signature. A field you've switched off dims its own value and goes dashed, so the right-hand column stops reading as a list of words and becomes a silhouette of what a stranger actually sees. At (0,3,0) this clears both .profile-field-value and its -empty variant without needing !important. */
+.profile-field-row[data-hidden="true"] .profile-field-value {
+  border-style: dashed;
+  opacity: 0.32;
+}
+
+.profile-field-row[data-hidden="true"] .profile-field-label {
+  opacity: 0.5;
+}
+
+/* Hovering brings a hidden value back to full - it stays editable while it's hidden, and 0.32 is too faint to read what you're about to change. */
+.profile-field-row[data-hidden="true"] .profile-field-value:hover {
+  opacity: 1;
 }
 
 /* The three edit controls wear the pill they replace - same border, radius, type and padding - so a row keeps its exact height when it flips into edit mode and nothing below it moves. Child combinators throughout: the autocomplete's suggestion list is also a descendant of .profile-field-control, and a loose selector here would reach into it. Every selector in the group lands between (0,1,1) and (0,2,1), all of which clear index.css's `input, select, textarea` at (0,0,1). */
@@ -274,6 +291,14 @@
 #profile .city-autocomplete-suggestions button:hover {
   background: var(--color-text);
   color: var(--color-surface);
+}
+
+/* The ghost still resolves, it just stops fading in - switching a field off must still read as a change, so the states themselves stay. */
+@media (prefers-reduced-motion: reduce) {
+  .profile-field-value,
+  .profile-field-label {
+    transition: none;
+  }
 }
 
 /* Only a hit area: .switch-track and .switch-knob inside it carry the entire appearance, so everything index.css's `button` rule would paint is stripped back off. The hover reset is what keeps this from flashing --color-accent-strong, the last teal left on the page. */
