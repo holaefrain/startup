@@ -141,68 +141,82 @@ export default function Profile() {
         {values &&
           PROFILE_FIELD_GROUPS.map((group) => (
             <section key={group.title} className="profile-field-group">
-              <h2>{group.title}</h2>
-              <ul>
-                {group.fields.map((field) => (
-                  <li key={field.key} className="profile-field-row">
-                    <button type="button" className="profile-field-main" onClick={() => setEditingKey(field.key)}>
-                      <span className="profile-field-label">{field.label}</span>
-                      {editingKey === field.key ? (
-                        CITY_AUTOCOMPLETE_FIELDS.has(field.key) ? (
-                          <CityAutocompleteInput
-                            autoFocus
-                            name={field.key}
-                            value={values[field.key]}
-                            onChange={(event) => handleFieldInput(field.key, event.target.value)}
-                            onBlur={() => commitField(field.key)}
-                            onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
-                            onCommit={(description, placeId) =>
-                              commitField(
-                                field.key,
-                                description,
-                                field.key === "location" && placeId ? { location_place_id: placeId } : null
-                              )
-                            }
-                            onClick={(event) => event.stopPropagation()}
-                          />
-                        ) : FIELD_OPTIONS[field.key] ? (
-                          <OptionSelect
-                            field={field.key}
-                            placeholder={`Select ${field.label}`}
-                            autoFocus
-                            value={values[field.key]}
-                            onChange={(event) => {
-                              const value = event.target.value;
-                              handleFieldInput(field.key, value);
-                              commitField(field.key, value);
-                            }}
-                            onClick={(event) => event.stopPropagation()}
-                          />
-                        ) : (
-                          <input
-                            autoFocus
-                            value={values[field.key]}
-                            onChange={(event) => handleFieldInput(field.key, event.target.value)}
-                            onBlur={() => commitField(field.key)}
-                            onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
-                            onClick={(event) => event.stopPropagation()}
-                          />
-                        )
-                      ) : (
-                        <span className="profile-field-value">{optionLabel(field.key, values[field.key]) || "Add"}</span>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      className="profile-field-visibility"
-                      disabled={!!field.locked}
-                      onClick={() => toggleVisibility(field.key)}
-                    >
-                      {visibilityLabel(field)}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <h2 className="profile-group-title">{group.title}</h2>
+
+              {/* HTML Deilverable: Proper HTML element usage - the same card > dl > row > dt/dd tree Discover's fact card uses, so one field renders as the same object on both pages. The label is plain text rather than part of a button: only the value is editable, which is what lets the edit controls sit as siblings instead of nested inside one. */}
+              <div className="profile-field-card">
+                <dl className="profile-field-list">
+                  {group.fields.map((field) => {
+                    const displayValue = optionLabel(field.key, values[field.key]);
+
+                    return (
+                      <div className="profile-field-row" key={field.key}>
+                        <dt className="profile-field-label">{field.label}</dt>
+                        <dd className="profile-field-control">
+                          {editingKey === field.key ? (
+                            CITY_AUTOCOMPLETE_FIELDS.has(field.key) ? (
+                              <CityAutocompleteInput
+                                autoFocus
+                                name={field.key}
+                                value={values[field.key]}
+                                onChange={(event) => handleFieldInput(field.key, event.target.value)}
+                                onBlur={() => commitField(field.key)}
+                                onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
+                                onCommit={(description, placeId) =>
+                                  commitField(
+                                    field.key,
+                                    description,
+                                    field.key === "location" && placeId ? { location_place_id: placeId } : null
+                                  )
+                                }
+                              />
+                            ) : FIELD_OPTIONS[field.key] ? (
+                              <OptionSelect
+                                field={field.key}
+                                placeholder={`Select ${field.label}`}
+                                autoFocus
+                                value={values[field.key]}
+                                onChange={(event) => {
+                                  const value = event.target.value;
+                                  handleFieldInput(field.key, value);
+                                  commitField(field.key, value);
+                                }}
+                              />
+                            ) : (
+                              <input
+                                autoFocus
+                                value={values[field.key]}
+                                onChange={(event) => handleFieldInput(field.key, event.target.value)}
+                                onBlur={() => commitField(field.key)}
+                                onKeyDown={(event) => event.key === "Enter" && commitField(field.key)}
+                              />
+                            )
+                          ) : (
+                            // Labelled by what pressing it does rather than by the value it shows - tabbing a column of pills would otherwise announce bare values with nothing saying which field each one belongs to.
+                            <button
+                              type="button"
+                              className={`profile-field-value${displayValue ? "" : " profile-field-value-empty"}`}
+                              aria-label={`Edit ${field.label}`}
+                              onClick={() => setEditingKey(field.key)}
+                            >
+                              {displayValue || "Add"}
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            className="profile-field-visibility"
+                            disabled={!!field.locked}
+                            onClick={() => toggleVisibility(field.key)}
+                          >
+                            {visibilityLabel(field)}
+                          </button>
+                        </dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+              </div>
             </section>
           ))}
       </main>

@@ -109,51 +109,101 @@
   letter-spacing: -0.01em;
 }
 
-.profile-field-group ul {
+.profile-field-group {
+  display: grid;
+  gap: 0.85rem;
+}
+
+/* Chat's .chat-title register, stepped down: these label three lists inside one page rather than titling the page itself, so they sit below .profile-name's weight without leaving the display face. */
+.profile-group-title {
   margin: 0;
-  padding: 0;
-  list-style: none;
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.9;
+}
+
+/* Discover's .profile-fact-card, split the same way it is there: the card owns the outline and the surface, the list owns the padding and the grid. No max-height or overflow here - the whole groups column scrolls as one, so a per-card scroller would fight the shared rail. */
+.profile-field-card {
+  border: var(--stroke) solid var(--color-text);
+  border-radius: 1.5rem;
+  background: var(--color-surface);
+}
+
+.profile-field-list {
+  display: grid;
+  margin: 0;
+  padding: 0.35rem 1.5rem;
 }
 
 .profile-field-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--color-border);
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.62rem 0;
 }
 
-.profile-field-row:last-child {
-  border-bottom: none;
-}
-
-.profile-field-main {
-  display: grid;
-  flex: 1;
-  gap: 0.15rem;
-  min-width: 0;
-  padding: 0;
-  border: none;
-  background: none;
-  color: inherit;
-  text-align: left;
-  font-weight: 400;
+/* The Separator as a border rather than an element, exactly as Discover draws it - one row's rule is the next one's top edge, so no divider is ever orphaned at either end of the list. */
+.profile-field-row + .profile-field-row {
+  border-top: 2px solid var(--color-border);
 }
 
 .profile-field-label {
-  font-weight: 800;
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 1.14rem;
+  font-weight: 500;
 }
 
+/* Resets the UA's margin-inline-start on <dd>, which would otherwise indent every value by 40px. */
+.profile-field-control {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+  margin: 0;
+}
+
+/* Discover's .profile-fact-value badge, promoted to a button - same border, radius and italic register, so the thing you press to edit is the same object the other page renders read-only. Ellipsises rather than wraps: every FIELD_OPTIONS label fits inside 20rem, so only unusually long free text ever truncates, and pressing it shows the full value in the input. */
 .profile-field-value {
+  max-width: 20rem;
+  margin: 0;
+  padding: 0.28rem 1.05rem;
   overflow: hidden;
-  color: var(--color-muted);
+  border: 2px solid var(--color-text);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.profile-field-main input {
-  min-height: auto;
-  padding: 0.35rem 0.5rem;
+/* Beats index.css's `button:hover` on source order, not specificity - both are (0,1,1), and this file loads after it. The same footing .chat-mode and .chat-scope-pill already stand on. */
+.profile-field-value:hover {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-surface);
+}
+
+/* An unfilled field reads as an invitation rather than as a value: dashed, muted, and out of the italic the real values wear. */
+.profile-field-value-empty {
+  border-style: dashed;
+  border-color: var(--color-muted);
+  color: var(--color-muted);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.profile-field-value-empty:hover {
+  border-color: var(--color-text);
 }
 
 .profile-field-visibility {
