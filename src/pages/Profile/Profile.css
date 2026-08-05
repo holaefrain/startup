@@ -31,12 +31,13 @@
   margin-bottom: 2rem;
 }
 
+/* The stroke plus a page-coloured inset, which is how Discover frames its active photo - the padding is the frame, since box-sizing is border-box globally, so the page colour shows as a band between the outline and the image. Not clipped: the remove control hangs off the corner and overflow: hidden would shave it. */
 .profile-photo-tile {
   position: relative;
   aspect-ratio: 1;
-  overflow: hidden;
-  border-radius: var(--radius-control);
-  background: #e9e9e9;
+  padding: 3px;
+  border: var(--stroke) solid var(--color-text);
+  background: var(--color-page);
 }
 
 .profile-photo-tile img {
@@ -44,43 +45,60 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  background: #e9e9e9;
 }
 
+/* Centred on the tile's corner rather than tucked inside it, the same way Discover's swipe buttons straddle the photo's corners. Solid black instead of a translucent scrim: on this page black is the dismissal, and --color-like stays reserved for the like button. */
 .profile-photo-remove {
   position: absolute;
-  top: 0.35rem;
-  right: 0.35rem;
+  top: -0.6rem;
+  right: -0.6rem;
+  z-index: 1;
   display: grid;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.9rem;
+  height: 1.9rem;
   place-items: center;
+  padding: 0;
   border: none;
   border-radius: 50%;
-  background: rgb(0 0 0 / 65%);
-  color: #ffffff;
-  font-size: 0.85rem;
-  line-height: 1;
+  background: var(--color-text);
+  color: var(--color-surface);
+  transition: transform 0.14s ease;
 }
 
-.profile-photo-remove:hover {
-  background: rgb(0 0 0 / 85%);
+/* Percentage rather than 1em - the glyph scales off the button, not off the page's type scale, which is the whole point of drawing it rather than typing it. */
+.profile-photo-remove svg {
+  width: 42%;
+  height: 42%;
 }
 
+.profile-photo-remove:not(:disabled):hover {
+  background: var(--color-text);
+  transform: scale(1.08);
+}
+
+.profile-photo-remove:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* Dashed in the page's own stroke weight, so an empty slot reads as the same kind of object as a filled one rather than as a faint grey box. */
 .profile-photo-add {
   display: grid;
   aspect-ratio: 1;
   place-items: center;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-control);
-  color: var(--color-muted);
+  border: var(--stroke) dashed var(--color-text);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-style: italic;
   font-weight: 800;
   text-align: center;
   cursor: pointer;
 }
 
 .profile-photo-add:hover {
-  border-color: var(--color-text);
-  color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-surface);
 }
 
 .profile-photo-error {

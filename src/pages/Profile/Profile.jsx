@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import AppNav from "../../components/AppNav.jsx";
+import CrossIcon from "../../components/CrossIcon.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import CityAutocompleteInput from "../../components/CityAutocompleteInput.jsx";
 import OptionSelect, { FIELD_OPTIONS, optionLabel } from "../../components/OptionSelect.jsx";
@@ -129,7 +130,7 @@ export default function Profile() {
                   onClick={() => handleRemovePhoto(index)}
                   disabled={removingIndex === index}
                 >
-                  &#10005;
+                  <CrossIcon />
                 </button>
               </div>
             ))}

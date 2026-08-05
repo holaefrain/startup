@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppNav from "../../components/AppNav.jsx";
 import ChevronIcon from "../../components/ChevronIcon.jsx";
+import CrossIcon from "../../components/CrossIcon.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
 import { AgeIcon, HeightIcon, LocationIcon } from "../../components/ProfileIcons.jsx";
 import { ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
@@ -19,14 +20,6 @@ function HeartIcon() {
   return (
     <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true">
       <path d="M12 21s-7.5-4.87-10.2-9.36C.1 8.9 1.4 5 5.1 4.2c2-.44 3.9.4 5 2 .1.15.3.25.5.25s.4-.1.5-.25c1.1-1.6 3-2.44 5-2 3.7.8 5 4.7 3.3 7.44C19.5 16.13 12 21 12 21Z" />
-    </svg>
-  );
-}
-
-function CrossIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" aria-hidden="true">
-      <path d="M4 4 20 20M20 4 4 20" />
     </svg>
   );
 }
