@@ -48,6 +48,22 @@
   background: #e9e9e9;
 }
 
+/* Straddles the opposite corner from the remove control so the two can never collide, and sits on the outline rather than over the photo - a label about the tile, not part of the picture. */
+.profile-photo-main {
+  position: absolute;
+  left: -0.4rem;
+  bottom: -0.55rem;
+  z-index: 1;
+  padding: 0.14rem 0.62rem;
+  border-radius: 999px;
+  background: var(--color-text);
+  color: var(--color-surface);
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
 /* Centred on the tile's corner rather than tucked inside it, the same way Discover's swipe buttons straddle the photo's corners. Solid black instead of a translucent scrim: on this page black is the dismissal, and --color-like stays reserved for the like button. */
 .profile-photo-remove {
   position: absolute;

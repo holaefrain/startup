@@ -123,6 +123,9 @@ export default function Profile() {
             {(user?.photoKeys ?? []).map((_, index) => (
               <div key={index} className="profile-photo-tile">
                 <img src={`/api/photos/${user.id}/${index}`} alt={`Photo ${index + 1}`} />
+
+                {/* The first photo does more work than the rest and nothing on this page said so: it's the avatar on every Chat row, message and panel (faceOf in Chat.jsx), both faces in Discover's match overlay, and the photo Discover's carousel opens on. Plain text rather than an icon so it's read out as well as seen. */}
+                {index === 0 && <span className="profile-photo-main">Main</span>}
                 <button
                   type="button"
                   className="profile-photo-remove"
