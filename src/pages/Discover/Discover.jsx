@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { animate } from "animejs";
 import AppNav from "../../components/AppNav.jsx";
 import ChevronIcon from "../../components/ChevronIcon.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
@@ -14,7 +13,6 @@ import "./Discover.css";
 // Already shown elsewhere on the card - name (h2), age/height/location (icon row), gender/pronouns/sexuality (subtitle line) - so skipped when rendering the field table below. Must stay in step with Chat's PROFILE_HEADER_FIELDS, which splits the same profile the same way.
 const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns", "sexuality"]);
 const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-const PEEK_PHOTO_SCALE = 0.82; // how much smaller a non-active carousel slide renders
 
 function MatchHeartIcon() {
   return (
@@ -74,7 +72,6 @@ export default function Discover() {
   const photoKeys = profile?.photoKeys ?? [];
   const photoCount = photoKeys.length;
   const [photoIndex, setPhotoIndex] = useState(0);
-  const photoTrackRef = useRef(null);
 
   // A new profile always starts on its first photo, regardless of where the previous profile's carousel was left.
   useEffect(() => {
@@ -85,23 +82,14 @@ export default function Discover() {
     setPhotoIndex(Math.max(0, Math.min(photoCount - 1, nextIndex)));
   }
 
-  // Slides the track so the active photo is centered in its viewport, revealing equal peeks of its neighbors on either side - measured in pixels via the actual rendered slide/viewport rather than assumed percentages, so it stays correct at any card width. Scales each slide individually alongside the slide (not just the track as a whole) so the incoming center photo grows to full size while the outgoing one shrinks back down to peek size.
-  useEffect(() => {
-    const track = photoTrackRef.current;
-    const slides = track ? Array.from(track.children) : [];
-    const activeSlide = slides[photoIndex];
-    if (!track || !activeSlide) return;
-
-    const viewport = track.parentElement;
-    const targetX = viewport.clientWidth / 2 - (activeSlide.offsetLeft + activeSlide.offsetWidth / 2);
-    const reduceMotion = window.matchMedia(REDUCE_MOTION_QUERY).matches;
-    const duration = reduceMotion ? 0 : 420;
-
-    animate(track, { translateX: targetX, duration, ease: "outExpo" });
-    slides.forEach((slide, slideIdx) => {
-      animate(slide, { scale: slideIdx === photoIndex ? 1 : PEEK_PHOTO_SCALE, duration, ease: "outExpo" });
-    });
-  }, [photoIndex, photoCount]);
+  // Where each photo sits relative to the one being shown. The mock places slides at fixed fractions of the square rather than sliding a track, so position is a class and CSS does the animating - no measuring, and nothing to recompute on resize.
+  function slideClass(photoIdx) {
+    const offset = photoIdx - photoIndex;
+    if (offset === 0) return "photo-carousel-slide photo-carousel-slide-active";
+    if (offset === -1) return "photo-carousel-slide photo-carousel-slide-before";
+    if (offset === 1) return "photo-carousel-slide photo-carousel-slide-after";
+    return "photo-carousel-slide photo-carousel-slide-hidden";
+  }
 
   // Gender/pronouns/sexuality read as one italicized line rather than table rows - only the ones the profile actually has are joined, so a profile missing one doesn't leave a dangling separator. Sexuality fills the mock's third slot: the mock labels it "Interested in", but interested_in is a matching preference the server deliberately withholds (see projectVisibleFields in userSchema.js), so it can never reach this component.
   const subtitleParts = profile
@@ -149,7 +137,7 @@ export default function Discover() {
       .catch(() => {});
   }
 
-  // Shared by the real carousel and the no-photos fallback below so both anchor the buttons to the same .photo-carousel-viewport (the photo itself), not whichever wrapper happens to be tallest.
+  // Shared by the real carousel and the no-photos fallback below so both anchor the buttons to the same .photo-carousel block (the photo itself), not whichever wrapper happens to be tallest.
   function renderSwipeButtons() {
     return (
       <>
@@ -297,44 +285,39 @@ export default function Discover() {
               <div className="profile-photos">
                 {photoCount > 0 ? (
                   <div className="photo-carousel">
-                    <div className="photo-carousel-viewport">
-                      <div className="photo-carousel-clip">
-                        <div className="photo-carousel-track" ref={photoTrackRef}>
-                          {photoKeys.map((_, photoIdx) => (
-                            <div className="photo-carousel-slide" key={photoIdx}>
-                              {/* HTML Deilverable: Images */}
-                              <img
-                                src={`/api/photos/${profile.id}/${photoIdx}`}
-                                alt={`${profile.first_name} ${profile.last_name}, photo ${photoIdx + 1} of ${photoCount}`}
-                              />
-                            </div>
-                          ))}
+                    {/* Only the slides are clipped - the dots straddle the square's bottom edge and the swipe buttons overhang its corners, so they sit outside this. */}
+                    <div className="photo-carousel-clip">
+                      {photoKeys.map((_, photoIdx) => (
+                        <div className={slideClass(photoIdx)} key={photoIdx}>
+                          {/* HTML Deilverable: Images */}
+                          <img
+                            src={`/api/photos/${profile.id}/${photoIdx}`}
+                            alt={`${profile.first_name} ${profile.last_name}, photo ${photoIdx + 1} of ${photoCount}`}
+                          />
                         </div>
-                      </div>
-
-                      {photoIndex > 0 && (
-                        <button
-                          type="button"
-                          className="photo-carousel-nav photo-carousel-prev"
-                          aria-label="Previous photo"
-                          onClick={() => goToPhoto(photoIndex - 1)}
-                        >
-                          ‹
-                        </button>
-                      )}
-                      {photoIndex < photoCount - 1 && (
-                        <button
-                          type="button"
-                          className="photo-carousel-nav photo-carousel-next"
-                          aria-label="Next photo"
-                          onClick={() => goToPhoto(photoIndex + 1)}
-                        >
-                          ›
-                        </button>
-                      )}
-
-                      {renderSwipeButtons()}
+                      ))}
                     </div>
+
+                    <button
+                      type="button"
+                      className="photo-carousel-nav photo-carousel-prev"
+                      aria-label="Previous photo"
+                      disabled={photoIndex === 0}
+                      onClick={() => goToPhoto(photoIndex - 1)}
+                    >
+                      ‹
+                    </button>
+                    <button
+                      type="button"
+                      className="photo-carousel-nav photo-carousel-next"
+                      aria-label="Next photo"
+                      disabled={photoIndex === photoCount - 1}
+                      onClick={() => goToPhoto(photoIndex + 1)}
+                    >
+                      ›
+                    </button>
+
+                    {renderSwipeButtons()}
 
                     {photoCount > 1 && (
                       <div className="photo-carousel-dots">
@@ -352,12 +335,17 @@ export default function Discover() {
                     )}
                   </div>
                 ) : (
-                  <div className="photo-carousel-viewport">
-                    <img
-                      className="photo-placeholder"
-                      src={placeholderPhoto}
-                      alt={`${profile.first_name} ${profile.last_name}`}
-                    />
+                  // Same .photo-carousel block, so the placeholder is the square and the swipe buttons land on its corners exactly as they do with real photos.
+                  <div className="photo-carousel">
+                    <div className="photo-carousel-clip">
+                      <div className="photo-carousel-slide photo-carousel-slide-active">
+                        <img
+                          className="photo-placeholder"
+                          src={placeholderPhoto}
+                          alt={`${profile.first_name} ${profile.last_name}`}
+                        />
+                      </div>
+                    </div>
                     {renderSwipeButtons()}
                   </div>
                 )}

@@ -63,29 +63,50 @@
   flex-shrink: 0;
 }
 
+/* The container --sq is measured against, so the photo block always fills this column exactly and no gap can open up between the facts and the photos. */
 .profile-photos {
   min-width: 0;
+  container-type: inline-size;
 }
 
 .swipe-btn {
   position: absolute;
-  bottom: 2rem;
-  z-index: 3;
+  bottom: 0;
+  z-index: 4;
   display: grid;
-  width: 7rem;
-  height: 7rem;
+  width: calc(var(--sq) * 0.225);
+  height: calc(var(--sq) * 0.225);
   place-items: center;
   border: none;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #ff5577, #c8102e);
-  color: #ffffff;
-  font-size: 3rem;
+  color: var(--color-surface);
+  font-size: calc(var(--sq) * 0.1);
   line-height: 1;
-  box-shadow: 0 0.5rem 1.25rem rgb(0 0 0 / 25%);
+  transform: translate(50%, 50%);
+  transition: filter 0.14s ease, opacity 0.14s ease, transform 0.14s ease;
 }
 
-.swipe-btn:not(:disabled):hover {
-  background: radial-gradient(circle at 35% 30%, #ff5577, #a70e2b);
+/* Centered on the square's two bottom corners - the translate(50%, 50%) above puts each button's middle exactly on its corner point, so it half-overhangs the photo the way the mock draws it. Red carries the affirmative here and black the dismissal, which keeps --color-alert free to go on meaning an unread count and nothing else. */
+.swipe-btn-like {
+  right: calc(var(--sq) * 1.1125);
+  background: var(--color-like);
+}
+
+.swipe-btn-like:not(:disabled):hover {
+  filter: brightness(0.92);
+}
+
+.swipe-btn-dislike {
+  right: calc(var(--sq) * 0.1125);
+  background: var(--color-text);
+}
+
+.swipe-btn-dislike:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+.swipe-btn:not(:disabled):active {
+  transform: translate(50%, 50%) scale(0.93);
 }
 
 .swipe-btn:disabled {
@@ -93,59 +114,37 @@
   opacity: 0.5;
 }
 
-/* The active slide is centered in the viewport at 50% of its width (.photo-carousel-slide's flex-basis), so its corners sit at the 25%/75% marks of the viewport - not the viewport's own edges, which is where the peek photos are instead. Centering each button on its corner (via translateX) rather than hardcoding half the button's width keeps this correct if the button size ever changes. */
-.swipe-btn-like {
-  left: 25%;
-  bottom: -10%;
-  transform: translateX(-50%);
-}
-
-.swipe-btn-dislike {
-  right: 25%;
-  bottom: -10%;
-  transform: translateX(50%);
-}
-
 .profile-photos .photo-placeholder {
   height: 100%;
   min-height: 100%;
 }
 
+/* Every number below is a measurement off Discover - Page.svg expressed as a fraction of the active square, so the whole composition scales from one value. 73.5% is 1/1.3601 - the width the square, the left neighbour's visible sliver and the pass button's overhang add up to - which makes the block exactly fill its column. */
 .photo-carousel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  --sq: min(clamp(16rem, 42vw, 36rem), 73.5cqw);
+  --photo-frame: calc(var(--sq) * 0.0299); /* the mock's 14u page-coloured inset */
+  --peek-w: calc(var(--sq) * 0.6717);
+  --peek-h: calc(var(--sq) * 0.7236);
   position: relative;
+  width: calc(var(--sq) * 1.3601);
+  height: var(--sq);
+  /* The swipe buttons hang .1125sq below the block. Reserving that as margin keeps them inside the grid row instead of overflowing it, and centering the taller box then lifts the photos by half of it. */
+  margin: 0 auto calc(var(--sq) * 0.1125);
 }
 
-/* Deliberately no overflow here - it's the positioning reference for the nav/swipe buttons, which are meant to straddle the photo's edges. Only .photo-carousel-clip (wrapping just the sliding track) clips, so the buttons are never cut off by that same clip. */
-.photo-carousel-viewport {
-  position: relative;
-  aspect-ratio: 1.4;
-}
-
+/* Only the slides clip. The dots straddle the square's bottom edge and the swipe buttons overhang its corners, so neither can live in here. Inset on the right by the same .0218 the block reserves for the pass button, so the right neighbour's sliver keeps the mock's width. */
 .photo-carousel-clip {
-  height: 100%;
+  position: absolute;
+  inset: 0 calc(var(--sq) * 0.0218) 0 0;
   overflow: hidden;
 }
 
-.photo-carousel-track {
-  position: relative;
-  display: flex;
-  height: 100%;
-  gap: 0.75rem;
-  will-change: transform;
-  justify-content: flex-start;
-  align-items: center;
-}
-
+/* Transitioning the individual properties rather than `all` - `all` would also animate z-index and background, which swap instantly by design. */
 .photo-carousel-slide {
-  flex: 0 0 50%;
-  height: 100%;
-  will-change: transform;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: absolute;
+  overflow: hidden;
+  transition: top 0.42s cubic-bezier(0.16, 1, 0.3, 1), right 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.42s cubic-bezier(0.16, 1, 0.3, 1), height 0.42s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .photo-carousel-slide img {
@@ -153,48 +152,92 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* transform: scale(1.1); */
 }
 
+/* The padding is the frame: box-sizing is border-box globally, so it carves inward and the page colour shows as a band over the photo's edges - which is what separates the square from the neighbours tucked behind it. */
+.photo-carousel-slide-active {
+  top: 0;
+  right: calc(var(--sq) * 0.0907);
+  z-index: 2;
+  width: var(--sq);
+  height: var(--sq);
+  padding: var(--photo-frame);
+  background: var(--color-page);
+}
+
+.photo-carousel-slide-before,
+.photo-carousel-slide-after {
+  top: calc(var(--sq) * 0.0843);
+  z-index: 1;
+  width: var(--peek-w);
+  height: var(--peek-h);
+}
+
+.photo-carousel-slide-before {
+  right: calc(var(--sq) * 0.6666);
+}
+
+/* Negative: it starts behind the square and runs off the block's right edge, where the clip cuts it to the sliver the mock shows. */
+.photo-carousel-slide-after {
+  right: calc(var(--sq) * -0.1569);
+}
+
+.photo-carousel-slide-hidden {
+  display: none;
+}
+
+/* Sits just inside the square's own frame. Positioned from the right in both cases so the pair stays fixed to the square rather than to the block, which is wider. */
 .photo-carousel-nav {
   position: absolute;
   top: 50%;
-  z-index: 2;
+  z-index: 3;
   display: grid;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: calc(var(--sq) * 0.0717);
+  height: calc(var(--sq) * 0.0717);
   place-items: center;
   border: none;
   border-radius: 50%;
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 1.25rem;
+  font-size: calc(var(--sq) * 0.04);
   line-height: 1;
-  transform: translateY(-50%);
+  transform: translate(50%, -50%);
 }
 
-.photo-carousel-nav:hover {
+.photo-carousel-nav:hover:not(:disabled) {
   background: var(--color-text);
   color: var(--color-surface);
 }
 
+.photo-carousel-nav:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
 .photo-carousel-prev {
-  left: 0.75rem;
+  right: calc(var(--sq) * 0.9875);
 }
 
 .photo-carousel-next {
-  right: 0.75rem;
+  right: calc(var(--sq) * 0.1875);
 }
 
+/* Straddles the square's bottom edge, centered on the square rather than on the block. Sitting half-over the photo is the mock's placement, and it keeps the dots legible against a light photo as well as a dark one. */
 .photo-carousel-dots {
+  position: absolute;
+  z-index: 3;
+  right: calc(var(--sq) * 0.1125);
+  bottom: calc(var(--sq) * -0.0295);
+  width: var(--sq);
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: calc(var(--sq) * 0.0216);
 }
 
 .photo-carousel-dot {
-  width: 1rem;
-  height: 1rem;
+  width: calc(var(--sq) * 0.059);
+  height: calc(var(--sq) * 0.059);
   padding: 0;
   border: none;
   border-radius: 50%;
@@ -205,8 +248,9 @@
   opacity: 0.7;
 }
 
+/* Squares off at the same size rather than changing colour or shrinking - on this page colour carries meaning and selection does not, the same discipline .chat-dot follows. */
 .photo-carousel-dot-active {
-  border-radius: 0.15rem;
+  border-radius: 0.12rem;
   background: var(--color-text);
 }
 
