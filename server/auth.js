@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require("uuid");
 const { ObjectId } = require("mongodb");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser } = require("./authHelpers");
+const { setAuthCookie } = require("./authCookie");
 const { USER_FIELDS, pickFields } = require("./userSchema");
 
 // Credentials live on the same `users` document the signup wizard creates (matched by email) rather than a separate collection, so a profile created via POST /api/signup and credentials registered here end up as one document per person. Because of that, registration only 409s when the matched user already has a `password` set - a bare profile doc with no credentials yet (the normal case right after /api/signup) is fair game to register against.
@@ -30,14 +31,6 @@ const existsRateLimit = rateLimit({
   legacyHeaders: false,
   message: { msg: "Too many attempts. Please try again later." },
 });
-
-function setAuthCookie(res, token) {
-  res.cookie("token", token, {
-    secure: true,
-    httpOnly: true,
-    sameSite: "strict",
-  });
-}
 
 // Registers credentials onto an existing bare profile doc - never creates one from scratch (no more upsert), since a credential-only account with no profile was never a real intended state. Prefers targeting the exact doc by `userId` (the id POST /api/signup just returned) rather than re-resolving by email a second time - if two bare docs happen to share an email (e.g. an old one left over from before a duplicate-prevention fix shipped), an unordered email lookup could silently register the wrong one, stranding the caller's actual just-submitted data on an orphaned duplicate. `userId` is optional only for workflows that create a bare doc outside of POST /api/signup (e.g. server/seedAdminUser.js's direct Mongo insert) - in that fallback path, more than one bare candidate for the same email means we can't tell which one is meant, so this refuses rather than guessing.
 // Service Deilverable: Supports registration

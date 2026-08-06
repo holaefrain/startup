@@ -1,7 +1,10 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
+const bcrypt = require("bcryptjs");
+const { v4: uuidv4 } = require("uuid");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser } = require("./authHelpers");
+const { setAuthCookie } = require("./authCookie");
 
 // Account-level state that isn't part of the profile: things you'd change about the account itself rather than about what other people see. Kept out of server/profile.js because PATCH /api/profile is allow-listed against PROFILE_EDITABLE_FIELDS by design, and none of these are profile fields.
 
@@ -16,6 +19,15 @@ const accountWriteRateLimit = rateLimit({
   message: { msg: "Too many changes. Please try again later." },
 });
 
+// Tighter than the above, and matched to server/auth.js's 20/15min for the same reason: every route it guards takes the account's current password, which makes each one a "guess a credential" surface no different from the login form.
+const credentialRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { msg: "Too many attempts. Please try again later." },
+});
+
 // Same shape as server/profile.js's - rejects before any body handling, and every route below reads req.user._id from the session rather than trusting an id in the request.
 async function requireAuth(req, res, next) {
   const user = await getAuthenticatedUser(req);
@@ -26,6 +38,117 @@ async function requireAuth(req, res, next) {
   req.user = user;
   next();
 }
+
+// Every credential change re-checks the current password rather than trusting the session alone. A session cookie proves the browser was logged in at some point; it doesn't prove the person at the keyboard is the account holder, which is the whole risk with an unattended machine. Returns a bad-password response the caller can hand straight to res, or null when it checks out.
+async function verifyCurrentPassword(user, currentPassword) {
+  if (typeof currentPassword !== "string" || currentPassword.length === 0) {
+    return { status: 400, body: { error: "Your current password is required." } };
+  }
+  // A user document can exist without a password (a bare profile from an interrupted signup - see server/auth.js), and bcrypt.compare against undefined throws rather than returning false.
+  if (!user.password || !(await bcrypt.compare(currentPassword, user.password))) {
+    return { status: 401, body: { error: "That password doesn't match your account." } };
+  }
+  return null;
+}
+
+// Signup marks the password field `required` and nothing more (src/pages/Signup/steps/AccountStep.jsx), so this is the app's first actual length rule. Applied only where a password is being chosen fresh - an existing short password still logs in fine, it just can't be replaced with another short one.
+const MIN_PASSWORD_LENGTH = 8;
+
+// Reuses the shape the signup wizard already validates against, so a number accepted there can't be rejected here.
+const PHONE_PATTERN = /^\+?(\d[\s\-.]?){7,15}$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Both unique indexes (email_unique_registered, phone_unique_registered) are partial on `password` existing, so a collision only surfaces on write - there's no reliable read-then-write check, and attempting one would be a race anyway. 11000 is therefore the real guard, not a fallback.
+function duplicateKeyResponse(error, field) {
+  if (error.code !== 11000) return null;
+  return { status: 409, body: { error: `That ${field} is already registered to another account.` } };
+}
+
+router.put("/account/password", credentialRateLimit, requireAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  const bad = await verifyCurrentPassword(req.user, currentPassword);
+  if (bad) {
+    res.status(bad.status).json(bad.body);
+    return;
+  }
+
+  if (typeof newPassword !== "string" || newPassword.length < MIN_PASSWORD_LENGTH) {
+    res.status(400).json({ error: `Your new password must be at least ${MIN_PASSWORD_LENGTH} characters.` });
+    return;
+  }
+
+  // Service Deilverable: Uses BCrypt to hash passwords - 10 rounds, matching server/auth.js so a password set here and one set at registration are stored identically.
+  const password = await bcrypt.hash(newPassword, 10);
+  // Rotated on purpose: a password change is how someone locks out a session they no longer control, and leaving the old token valid would defeat that. The new cookie below keeps *this* browser signed in, so only the other sessions drop.
+  const token = uuidv4();
+
+  const db = await getDb();
+  await db.collection("users").updateOne({ _id: req.user._id }, { $set: { password, token } });
+
+  setAuthCookie(res, token);
+  res.json({ ok: true });
+});
+
+router.put("/account/email", credentialRateLimit, requireAuth, async (req, res) => {
+  const { currentPassword, email } = req.body;
+
+  const bad = await verifyCurrentPassword(req.user, currentPassword);
+  if (bad) {
+    res.status(bad.status).json(bad.body);
+    return;
+  }
+
+  if (typeof email !== "string" || !EMAIL_PATTERN.test(email.trim())) {
+    res.status(400).json({ error: "That doesn't look like an email address." });
+    return;
+  }
+
+  // Trimmed but deliberately not lower-cased: nothing else in this app normalises case (signup stores what it's given, login does an exact findOne, and the unique index is on the raw value), so folding it here would let someone register an address that then can't be logged into.
+  const next = email.trim();
+
+  const db = await getDb();
+  try {
+    await db.collection("users").updateOne({ _id: req.user._id }, { $set: { email: next } });
+  } catch (error) {
+    const conflict = duplicateKeyResponse(error, "email address");
+    if (!conflict) throw error;
+    res.status(conflict.status).json(conflict.body);
+    return;
+  }
+
+  // No confirmation step, because this app sends no mail - worth knowing that changing this field moves the login identity immediately, with nothing proving the new address is reachable.
+  res.json({ email: next });
+});
+
+router.put("/account/phone", credentialRateLimit, requireAuth, async (req, res) => {
+  const { currentPassword, phone } = req.body;
+
+  const bad = await verifyCurrentPassword(req.user, currentPassword);
+  if (bad) {
+    res.status(bad.status).json(bad.body);
+    return;
+  }
+
+  if (typeof phone !== "string" || !PHONE_PATTERN.test(phone.trim())) {
+    res.status(400).json({ error: "That doesn't look like a phone number." });
+    return;
+  }
+
+  const next = phone.trim();
+
+  const db = await getDb();
+  try {
+    await db.collection("users").updateOne({ _id: req.user._id }, { $set: { phone: next } });
+  } catch (error) {
+    const conflict = duplicateKeyResponse(error, "phone number");
+    if (!conflict) throw error;
+    res.status(conflict.status).json(conflict.body);
+    return;
+  }
+
+  res.json({ phone: next });
+});
 
 // Hides the account from GET /api/discover without touching anything else - existing matches, messages and swipes all survive, which is what the control on the Settings page promises.
 //
