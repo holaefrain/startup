@@ -371,10 +371,58 @@
   color: var(--color-surface);
 }
 
-/* The ghost still resolves, it just stops fading in - switching a field off must still read as a change, so the states themselves stay. */
+/* The same width Chat and Discover stack at, so no two pages are ever in different layouts at the same viewport. No row reordering here: Discover has to lift its photos above its facts because they come second in its markup, whereas this page already leads with the identity block. */
+@media (max-width: 60rem) {
+  #profile main {
+    width: min(100% - 1.5rem, 34rem);
+    padding: 5.5rem 0 2rem;
+  }
+
+  .profile-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+  }
+
+  /* Scoped to #profile because .scroll-rail is shared - unscoped, this would hide Chat's three rails and Discover's too. */
+  #profile .scroll-rail {
+    display: none;
+  }
+
+  /* The column drops its cap and simply grows once the rail that scrolled it is gone, the same trade .chat-list and .profile-fact-card make. Overflow goes back to visible with it, so the autocomplete's dropdown is no longer clipped by a container that has nothing left to scroll. */
+  .profile-groups {
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* Back to three up: the stacked column runs to 34rem, where two tiles would be 16rem squares. */
+  .profile-photo-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.9rem;
+  }
+
+  .profile-group-title {
+    font-size: 1.55rem;
+  }
+
+  .profile-field-list {
+    padding: 0.35rem 1.15rem;
+  }
+
+  .profile-field-label {
+    font-size: 1.02rem;
+  }
+
+  .profile-field-value {
+    max-width: 11rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* The ghost still resolves, it just stops fading in - switching a field off must still read as a change, so the states themselves stay. The switch's own track and knob are covered by the matching block in index.css, and the rail checks the same query in JS before it scrolls. */
 @media (prefers-reduced-motion: reduce) {
   .profile-field-value,
-  .profile-field-label {
+  .profile-field-label,
+  .profile-photo-remove {
     transition: none;
   }
 }
