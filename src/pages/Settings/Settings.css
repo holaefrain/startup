@@ -313,6 +313,159 @@
   opacity: 0.4;
 }
 
+/* ---- report picker ---- */
+
+/* Opens inside the card, under the row that summoned it, rather than as a second dialog on top of the one it leads to - two stacked modals to file one report is a worse answer than a list that appears in place. */
+.settings-picker {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0 0 0.75rem;
+}
+
+.settings-picker-note {
+  margin: 0;
+  max-width: 30rem;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+.settings-picker-row {
+  width: 100%;
+  min-height: auto;
+  padding: 0.3rem 1.05rem;
+  border: 2px solid var(--color-text);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 800;
+  text-align: left;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.settings-picker-row:hover {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-surface);
+}
+
+.settings-picker-cancel {
+  justify-self: start;
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--color-muted);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.settings-picker-cancel:hover {
+  background: none;
+  border-color: transparent;
+  color: var(--color-text);
+}
+
+/* ---- blocked accounts ---- */
+
+.blocked-body {
+  padding: 1.1rem 1.5rem;
+}
+
+.blocked-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.blocked-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+/* Chat's .chat-panel-face ring and its #e9e9e9 placeholder ground, sized down to a row. Doubles as the initial when there's no photo, which is why it's a grid rather than just an img rule. */
+.blocked-face {
+  flex: 0 0 auto;
+  display: grid;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border: 3px solid #2c4a52;
+  border-radius: 50%;
+  background: #e9e9e9;
+  object-fit: cover;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #2c4a52;
+}
+
+.blocked-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.blocked-name small {
+  display: block;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.blocked-undo {
+  flex: none;
+  min-height: auto;
+  padding: 0.24rem 0.95rem;
+  border: 2px solid var(--color-text);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-style: italic;
+  font-weight: 800;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.blocked-undo:hover {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-surface);
+}
+
+.blocked-empty {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+/* Sits under the group title as a second heading inside one section - below .settings-group-title's weight without leaving the display face. */
+.settings-subtitle {
+  margin: 0.4rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+}
+
 /* ---- crisis ---- */
 
 .crisis-note {
@@ -452,6 +605,10 @@
   .settings-list,
   .crisis-list {
     padding: 0.35rem 1.15rem;
+  }
+
+  .blocked-body {
+    padding: 1rem 1.15rem;
   }
 
   .settings-label {

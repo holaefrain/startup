@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AppNav from "../../components/AppNav.jsx";
 import ChevronIcon from "../../components/ChevronIcon.jsx";
 import CrossIcon from "../../components/CrossIcon.jsx";
+import ReportDialog from "../../components/ReportDialog.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
 import { AgeIcon, HeightIcon, LocationIcon } from "../../components/ProfileIcons.jsx";
 import { ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
@@ -33,6 +34,7 @@ export default function Discover() {
   const [error, setError] = useState("");
   // Holds { matchId, profile } for the just-matched person, or null - `profile` is the swiped profile object swipe() already has in scope (photoKeys, first_name, id and all), not a separate fetch.
   const [matchNotice, setMatchNotice] = useState(null);
+  const [reporting, setReporting] = useState(false);
   const fieldCardRef = useRef(null);
   // Which chevrons are still worth pressing. Both true when the card doesn't overflow at all, which disables the pair rather than leaving two controls that do nothing.
   const [fieldEdges, setFieldEdges] = useState({ atStart: true, atEnd: true });
@@ -222,6 +224,19 @@ export default function Discover() {
       <main>
         {renderMatchOverlay()}
 
+        {/* Advances past the profile on success the same way a swipe does - the server has already blocked them by then, so leaving the card up would show someone this deck can no longer return. */}
+        {reporting && profile && (
+          <ReportDialog
+            person={profile}
+            context={{ kind: "profile" }}
+            onClose={() => setReporting(false)}
+            onReported={(blocked) => {
+              setReporting(false);
+              if (blocked) setIndex((prev) => prev + 1);
+            }}
+          />
+        )}
+
         <section className="swipe-area" aria-live="polite">
           {error && <p role="alert">{error}</p>}
 
@@ -264,6 +279,11 @@ export default function Discover() {
                     </dl>
                   </div>
                 )}
+
+                {/* The quietest control on the card by design - reporting has to be findable from the profile itself, since this is where you'd notice something wrong, but it isn't one of the two things this page is asking you to do. */}
+                <button type="button" className="report-open" onClick={() => setReporting(true)}>
+                  Report this profile
+                </button>
               </div>
 
               {/* The rail sits between the facts and the photos as its own column, the same place Chat puts it - not nested beside the table, which is where it lived when the card was a two-column flex row. Absent entirely when there are no facts, so the grid's middle column collapses instead of holding a control with nothing to scroll. */}

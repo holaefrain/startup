@@ -1,0 +1,220 @@
+/* Shared by Discover, Chat and Settings - lives with the component rather than with any one page, the same way AppNav.css does. */
+
+/* The card the rest of the app draws: the page's stroke weight, the same 1.5rem radius .profile-fact-card and .settings-card use. Sized against the viewport rather than fixed so a long reason list never pushes the actions off a short window. */
+.report-dialog {
+  width: min(100% - 2rem, 32rem);
+  max-height: min(90vh, 44rem);
+  padding: 0;
+  overflow-y: auto;
+  border: var(--stroke) solid var(--color-text);
+  border-radius: 1.5rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.report-dialog::backdrop {
+  background: rgb(5 5 5 / 45%);
+}
+
+/* Overrides index.css's `form { display: grid; gap: 0.85rem; max-width: 42rem }` - the gap there would double up with the margins the blocks below already carry, and the max-width would stop the form filling the dialog. */
+.report-body {
+  display: block;
+  max-width: none;
+  padding: 1.6rem 1.75rem 1.5rem;
+}
+
+.report-title {
+  margin: 0 0 0.3rem;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+.report-lede {
+  margin: 0 0 1.15rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+/* The one sentence in the dialog someone needs to believe before they'll press the button, so the promise itself is the only thing here at full contrast. */
+.report-lede b {
+  color: var(--color-text);
+}
+
+/* Also worn by the textarea's label, so the two read as the same kind of heading rather than one being a legend and one being a label. */
+.report-legend {
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.report-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0 0 1.1rem;
+  padding: 0;
+  border: none;
+}
+
+.report-reasons legend {
+  margin-bottom: 0.5rem;
+}
+
+.report-reasons label {
+  padding: 0.26rem 0.95rem;
+  border: 2px solid var(--color-text);
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-style: italic;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+/* The radio itself is off-screen rather than display:none - hidden that way it stays focusable and keeps the arrow-key group behaviour a radio set is supposed to have. */
+.report-reasons input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.report-reasons label:hover {
+  background: var(--color-border);
+}
+
+/* The pressed pill inverts rather than tinting, the way .chat-scope-pill does - which reason you picked is a selection, not a signal, so it spends no colour. */
+.report-reasons label:has(input:checked) {
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+/* The focus ring has to be put back by hand: the input it would normally sit on is the off-screen one. */
+.report-reasons label:has(input:focus-visible) {
+  outline: 3px solid rgb(15 118 110 / 35%);
+  outline-offset: 3px;
+}
+
+.report-field {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.report-field textarea {
+  width: 100%;
+  min-height: 4.5rem;
+  padding: 0.55rem 0.9rem;
+  border: 2px solid var(--color-text);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  resize: vertical;
+}
+
+.report-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.report-check input {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin: 0.15rem 0 0;
+  accent-color: var(--color-text);
+}
+
+.report-error {
+  margin: 0 0 1rem;
+  color: #b3261e;
+  font-size: 0.9rem;
+}
+
+.report-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.report-cancel,
+.report-submit {
+  min-height: auto;
+  padding: 0.4rem 1.3rem;
+  border: 2px solid var(--color-text);
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 800;
+  transition: background 0.14s ease, color 0.14s ease, opacity 0.14s ease;
+}
+
+.report-cancel {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.report-cancel:hover {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-surface);
+}
+
+.report-submit {
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+.report-submit:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* The control that opens this dialog, shared by Discover's card and Chat's thread head. Deliberately the quietest button on either page - underlined muted text rather than a pill, because reporting should be findable without being one of the things the page invites you to do. */
+.report-open {
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--color-muted);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  transition: color 0.14s ease;
+}
+
+.report-open:hover {
+  background: none;
+  border-color: transparent;
+  color: var(--color-alert);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report-reasons label,
+  .report-cancel,
+  .report-submit,
+  .report-open {
+    transition: none;
+  }
+}

@@ -4,6 +4,7 @@ import AppNav from "../../components/AppNav.jsx";
 import ChevronIcon from "../../components/ChevronIcon.jsx";
 import { optionLabel } from "../../components/OptionSelect.jsx";
 import { AgeIcon, HeightIcon, LocationIcon } from "../../components/ProfileIcons.jsx";
+import ReportDialog from "../../components/ReportDialog.jsx";
 import { ALL_PROFILE_FIELDS } from "../../constants/profileFields.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useChatSocket } from "../../hooks/useChatSocket.js";
@@ -284,6 +285,7 @@ export default function Chat() {
   const [matches, setMatches] = useState(null);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const [reporting, setReporting] = useState(false);
   // Only meaningful below the two-column breakpoint, where list and panel share the screen and this decides which one you're looking at.
   const [panelOpen, setPanelOpen] = useState(false);
   const [messagesByMatch, setMessagesByMatch] = useState({});
@@ -610,6 +612,22 @@ export default function Chat() {
         )}
 
         <div className="chat-panel-col">
+          {/* Drops the thread from the list on success rather than refetching - the server has already stopped returning it from GET /api/matches, so a reload would only confirm what's known, and the panel has to close either way since opening it now 403s. */}
+          {reporting && selectedMatch && (
+            <ReportDialog
+              person={selectedMatch.otherUser}
+              context={{ kind: "message", matchId: selectedMatch.id }}
+              onClose={() => setReporting(false)}
+              onReported={(blocked) => {
+                setReporting(false);
+                if (!blocked) return;
+                setMatches((prev) => prev?.filter((match) => match.id !== selectedMatch.id) ?? prev);
+                setSelectedId(null);
+                setPanelOpen(false);
+              }}
+            />
+          )}
+
           {selectedMatch && (
             <section className="chat-panel" aria-label={`Conversation with ${displayName(selectedMatch.otherUser)}`}>
               <header className="chat-panel-head">
@@ -626,6 +644,11 @@ export default function Chat() {
                       </button>
                     ))}
                   </div>
+
+                  {/* Beside the mode pills rather than among them: those switch what this panel shows, and this leaves the conversation entirely. Kept as the quiet underlined control it is on Discover so the same action looks the same in both places. */}
+                  <button type="button" className="report-open" onClick={() => setReporting(true)}>
+                    Report this person
+                  </button>
                 </div>
                 <img
                   className="chat-panel-face"

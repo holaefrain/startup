@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppNav from "../../components/AppNav.jsx";
 import ChevronIcon from "../../components/ChevronIcon.jsx";
+import ReportDialog from "../../components/ReportDialog.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useDiscoverMode } from "../../context/DiscoverModeContext.jsx";
 import { CRISIS_NOTE, CRISIS_RESOURCES } from "../../constants/crisisResources.js";
@@ -75,6 +76,13 @@ export default function Settings() {
   // null until seeded from `user` below, the same way Profile.jsx seeds its field values - seeded once rather than re-synced on every refreshUser(), since the optimistic update in togglePause already keeps this accurate.
   const [paused, setPaused] = useState(null);
   const [pauseError, setPauseError] = useState("");
+  // null while loading, [] once loaded and empty - the two render differently, so they can't share a value.
+  const [blocked, setBlocked] = useState(null);
+  const [blockError, setBlockError] = useState("");
+  // The match picked from the fallback list, or null when the dialog is closed. Settings has no profile in front of it, so unlike Discover and Chat it has to ask who first.
+  const [reportTarget, setReportTarget] = useState(null);
+  const [matches, setMatches] = useState(null);
+  const [pickingReport, setPickingReport] = useState(false);
 
   const hasPhoto = (user?.photoKeys?.length ?? 0) > 0;
 
@@ -131,6 +139,48 @@ export default function Settings() {
     setPaused(user.paused === true);
   }, [user, paused]);
 
+  function loadBlocked() {
+    return fetch("/api/blocks")
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error())))
+      .then(setBlocked)
+      .catch(() => setBlocked([]));
+  }
+
+  useEffect(() => {
+    loadBlocked();
+  }, []);
+
+  // The blocked list is the only group whose height changes after load, so the rail has to remeasure once it arrives or the chevrons stay wrong for a column that has since grown.
+  useEffect(() => {
+    syncGroupEdges();
+  }, [blocked]);
+
+  function unblock(person) {
+    setBlockError("");
+    const name = [person.first_name, person.last_name].filter(Boolean).join(" ") || "that account";
+    // Removed first, restored on failure - the same optimistic trade the pause switch makes.
+    setBlocked((prev) => prev.filter((entry) => entry.id !== person.id));
+    fetch(`/api/blocks/${person.id}`, { method: "DELETE" })
+      .then((response) => {
+        if (!response.ok) throw new Error();
+      })
+      .catch(() => {
+        setBlocked((prev) => [person, ...prev]);
+        setBlockError(`Couldn't unblock ${name}. Please try again.`);
+      });
+  }
+
+  // Settings is the one entry point with nobody in front of it, so the picker comes from the people you've actually matched with - reporting a stranger you've never been shown isn't a thing the app can support.
+  function openReportPicker() {
+    setPickingReport(true);
+    setBlockError("");
+    if (matches) return;
+    fetch("/api/matches")
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error())))
+      .then(setMatches)
+      .catch(() => setMatches([]));
+  }
+
   function handleResetDemo() {
     resetDemoMode().catch(() => {});
   }
@@ -160,6 +210,19 @@ export default function Settings() {
       <AppNav />
 
       <main>
+        {reportTarget && (
+          <ReportDialog
+            person={reportTarget}
+            context={{ kind: "profile" }}
+            onClose={() => setReportTarget(null)}
+            onReported={(wasBlocked) => {
+              setReportTarget(null);
+              // The blocked list is on this very page, so it has to reflect the block that just happened rather than waiting for a reload.
+              if (wasBlocked) loadBlocked();
+            }}
+          />
+        )}
+
         <div className="settings-shell">
           <section className="settings-identity">
             <div className="settings-face">
@@ -320,10 +383,36 @@ export default function Settings() {
                     label="Report someone"
                     hint="You can also report straight from a profile in Discover or from a chat thread."
                   >
-                    <button type="button" className="settings-value" disabled>
+                    <button type="button" className="settings-value" onClick={openReportPicker}>
                       Report
                     </button>
                   </SettingsRow>
+                  {pickingReport && (
+                    <div className="settings-picker">
+                      {matches === null && <p className="settings-picker-note">Loading your matches...</p>}
+                      {matches?.length === 0 && (
+                        <p className="settings-picker-note">
+                          You haven't matched with anyone yet. Reports start from a profile in Discover or from a chat.
+                        </p>
+                      )}
+                      {matches?.map((match) => (
+                        <button
+                          key={match.id}
+                          type="button"
+                          className="settings-picker-row"
+                          onClick={() => {
+                            setReportTarget(match.otherUser);
+                            setPickingReport(false);
+                          }}
+                        >
+                          {[match.otherUser.first_name, match.otherUser.last_name].filter(Boolean).join(" ")}
+                        </button>
+                      ))}
+                      <button type="button" className="settings-picker-cancel" onClick={() => setPickingReport(false)}>
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                   <SettingsRow
                     label="After you report"
                     hint="A reviewer reads every report, usually within a day. The person you reported is never notified and never learns who reported them."
@@ -341,6 +430,44 @@ export default function Settings() {
                     </button>
                   </SettingsRow>
                 </dl>
+              </div>
+
+              <h3 className="settings-subtitle">Blocked accounts</h3>
+              <div className="settings-card">
+                <div className="blocked-body">
+                  {blocked === null && <p className="blocked-empty">Loading...</p>}
+                  {blocked?.length === 0 && <p className="blocked-empty">Nobody blocked.</p>}
+                  {blocked?.length > 0 && (
+                    <ul className="blocked-list">
+                      {blocked.map((person) => {
+                        const name = [person.first_name, person.last_name].filter(Boolean).join(" ") || "Account";
+                        return (
+                          <li key={person.id} className="blocked-row">
+                            {person.photoKeys?.length > 0 ? (
+                              <img className="blocked-face" src={`/api/photos/${person.id}/0`} alt="" />
+                            ) : (
+                              <span className="blocked-face" aria-hidden="true">
+                                {name.charAt(0)}
+                              </span>
+                            )}
+                            <span className="blocked-name">
+                              {name}
+                              <small>Blocked {new Date(person.blockedAt).toLocaleDateString()}</small>
+                            </span>
+                            <button type="button" className="blocked-undo" onClick={() => unblock(person)}>
+                              Unblock
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  {blockError && (
+                    <p role="alert" className="settings-error">
+                      {blockError}
+                    </p>
+                  )}
+                </div>
               </div>
             </section>
 
