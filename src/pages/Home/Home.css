@@ -212,9 +212,15 @@
 .hero-photo-stack figure:last-child { width: 9.5rem; height: 9.7rem; transform: translateY(-1.7rem); }
 .hero-photo-stack img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
-/* The copy column has to hold a 5.45em word (SOMETHING) at the h2's full size, so it takes the larger share. */
-.home-statement { grid-template-columns: minmax(25rem, 1.3fr) minmax(22rem, 0.62fr); }
-.home-statement h2 { font-size: clamp(5rem, 10.5vw, 9.2rem); }
+.home-statement { grid-template-columns: minmax(25rem, 0.9fr) minmax(24rem, 0.75fr); }
+.home-statement .home-copy { container-type: inline-size; }
+
+/* --h2-line-em is the scene's longest heading line measured in ems, so the type can never
+   outgrow its column and break a word across two lines however narrow the column gets. */
+.home-statement h2 { font-size: min(clamp(5rem, 10.5vw, 9.2rem), calc(100cqw / var(--h2-line-em))); }
+#how-it-works { --h2-line-em: 5.46; }
+#elevator-pitch { --h2-line-em: 6.13; }
+#different-approach { --h2-line-em: 4.09; }
 .scene-lede { max-width: 22rem; line-height: 1.1; }
 
 .home-info-card {
