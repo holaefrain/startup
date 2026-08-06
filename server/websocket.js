@@ -42,6 +42,22 @@ function broadcastToUsers(userIds, payload) {
   }
 }
 
+// Hangs up every socket a user still has open and drops their entry. Needed because a session ending server-side (DELETE /api/account) doesn't reach a socket that's already connected - the token check happens once, at upgrade, so an open tab would otherwise sit registered against a user document that no longer exists, and keep receiving anything broadcast to a match that hadn't finished being torn down.
+// 4001 rather than a bare close so the client can tell a deliberate hang-up from a dropped connection and not reconnect into a 401 loop.
+function closeConnectionsForUser(userId) {
+  const key = userId.toString();
+  const sockets = connectionsByUserId.get(key);
+  if (!sockets) return 0;
+
+  const count = sockets.size;
+  for (const ws of sockets) {
+    // The 'close' handler calls unregisterConnection, which mutates the very set being iterated - so the entry is dropped explicitly below rather than relied on to empty itself mid-loop.
+    if (ws.readyState === ws.OPEN || ws.readyState === ws.CONNECTING) ws.close(4001, "Account deleted");
+  }
+  connectionsByUserId.delete(key);
+  return count;
+}
+
 // Wires a WebSocketServer onto an existing http.Server for path /ws - entirely separate from Express's middleware stack, so auth here is a manual cookie parse + session lookup rather than req.cookies/getAuthenticatedUser.
 function attachWebSocketServer(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
@@ -78,4 +94,4 @@ function attachWebSocketServer(httpServer) {
   return wss;
 }
 
-module.exports = { attachWebSocketServer, broadcastToUsers };
+module.exports = { attachWebSocketServer, broadcastToUsers, closeConnectionsForUser };
