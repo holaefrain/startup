@@ -3,8 +3,9 @@ const { getDb } = require("./dbClient");
 const { isBlockedPair } = require("./blocks");
 
 // The actual session lookup, independent of how the token was obtained - reused by getAuthenticatedUser below (req.cookies, the normal Express path) and server/websocket.js's upgrade handler, which has no req.cookies since cookie-parser never runs on a raw upgrade request.
+// The type check is the security boundary, not a nicety: cookie-parser JSON-decodes any cookie value starting with "j:" whether or not a signing secret is configured, so `token` arrives attacker-controlled in type as well as value. A truthiness check passes an object straight through, and `{ token: { $gt: "" } }` is then a Mongo operator that matches the first user holding any session - authenticating as a real user with no credentials at all. Enforced here rather than at each call site because this is the one lookup every authenticated route reaches, Express and WebSocket alike.
 async function getUserByToken(token) {
-  if (!token) return null;
+  if (typeof token !== "string" || token.length === 0) return null;
   const db = await getDb();
   return db.collection("users").findOne({ token });
 }

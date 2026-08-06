@@ -116,7 +116,8 @@ router.put("/auth", credentialRateLimit, async (req, res) => {
 // Service Deilverable: Supports logout
 router.delete("/auth", async (req, res) => {
   const token = req.cookies?.token;
-  if (token) {
+  // Same guard, and for the same reason, as getUserByToken's - this is the one token read that doesn't go through it, and an object here would $unset an arbitrary user's session instead of the caller's.
+  if (typeof token === "string" && token.length > 0) {
     const db = await getDb();
     await db.collection("users").updateOne({ token }, { $unset: { token: "" } });
   }
