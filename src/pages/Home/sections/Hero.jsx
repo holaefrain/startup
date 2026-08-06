@@ -7,10 +7,10 @@ export default function Hero() {
   return (
     <section className="home-scene home-hero" id="hero-section">
       <div className="home-copy home-hero-copy">
-        <p className="scene-kicker">01 — THE POINT</p>
-        <h1>DATING,<br />BUT WITH<br />A POINT.</h1>
-        <p className="home-hero-lede">Less swiping. More intention.</p>
-        <p className="home-hero-body">Meet people who are ready to make a plan—<br />then keep the conversation moving.</p>
+        <p className="scene-kicker">01 — AIR IT OUT</p>
+        <h1>LET IT<br />ALL<br />AIR OUT</h1>
+        <p className="home-hero-lede">Match. Date. Debrief.</p>
+        <p className="home-hero-body">Meet people who are ready to make a plan—<br />then take some time to reflect.</p>
         <Link className="home-primary-cta" to="/signup">CREATE YOUR PROFILE</Link>
         <p className="home-scroll-cue">SCROLL TO START ↓</p>
       </div>

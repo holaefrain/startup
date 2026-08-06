@@ -1,6 +1,7 @@
 const path = require("path");
 const express = require("express");
 const multer = require("multer");
+const rateLimit = require("express-rate-limit");
 const { v4: uuidv4 } = require("uuid");
 const { PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const { s3Client, bucketName } = require("./s3Client");
@@ -29,6 +30,20 @@ const upload = multer({
 
 const router = express.Router();
 
+// PATCH /profile doesn't look like a third-party route, which is exactly why it needed one: the fetchPlaceCoordinates call below is a billed Google Places Details request, and nothing in the route's name or path says so. Left alone it was the cheapest way to bill this app's API key in a loop, precisely because it reads as an ordinary profile write.
+//
+// `skip` is what makes this limiter honest. The Google call only happens when the body carries a location_place_id, so counting every profile edit would ration renaming a job title against a budget that exists for a cost renaming a job title doesn't incur. Only requests that will actually reach Google draw it down - and 10 is generous for that, since changing where you live is not something a real user does repeatedly.
+//
+// Safe to read req.body here because express.json() is mounted globally in server/index.js, ahead of every router - this route is JSON, not multipart, so the body is already parsed by the time skip runs.
+const placeLookupRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => typeof req.body?.fields?.location_place_id !== "string",
+  message: { error: "Too many location changes. Please try again later." },
+});
+
 // Runs before multer on the photo route specifically so an unauthenticated request is rejected before the server spends effort buffering an up-to-8MB upload into memory, not after.
 async function requireAuth(req, res, next) {
   const user = await getAuthenticatedUser(req);
@@ -53,7 +68,7 @@ function pickVisibility(source) {
 }
 
 // Body is JSON { fields?: {...}, visibility?: {...} }, both allow-listed against server/userSchema.js so a client can only ever touch the exact fields Profile.jsx exposes - notably never email/phone, which each have a partial unique index (see server/index.js's account-takeover fix).
-router.patch("/profile", requireAuth, async (req, res) => {
+router.patch("/profile", placeLookupRateLimit, requireAuth, async (req, res) => {
   const { user } = req;
 
   const fields = pickFields(req.body.fields ?? {}, PROFILE_EDITABLE_FIELDS);

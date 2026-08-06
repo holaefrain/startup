@@ -95,6 +95,28 @@ const autocompleteRateLimit = rateLimit({
   message: { error: "Too many requests. Please try again later." },
 });
 
+// Requiring a session is not a spend limit: an account costs nothing to make, and one logged-in caller looping this route bills us per call with no ceiling. searchNearby against VENUE_FIELD_MASK is also the most expensive request this app makes of Google, which is why this budget is the tightest of the three despite being the one behind auth.
+//
+// Chat.jsx caches venues per location rather than per open, so real use is a handful of calls even for someone switching between Near Me and Near Them while planning - 30 leaves that untouched.
+const venueSearchRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many venue searches. Please try again later." },
+});
+
+// An order of magnitude looser than the search above, and deliberately so: one venue list is up to 10 places, each with its own photo, so a single legitimate search can fan out into 10 calls here. A budget sized like the search's would break normal browsing long before it stopped anyone.
+//
+// The immutable Cache-Control on the response means a real browser fetches each photo once, so this ceiling is only ever reached by something ignoring caches - which is exactly what it's for.
+const venuePhotoRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many photo requests. Please try again later." },
+});
+
 // Shared by both routes below - Google's Places API (New) uses POST + a JSON body + these headers, not the old Legacy API's GET+query-param shape. X-Goog-FieldMask restricts the response to just what's needed, which the New Places API rewards for cost/size control.
 // Service Deilverable: Calls to third party endpoints
 // HTML Deilverable: 3rd party API placeholder (now the real integration)
@@ -140,7 +162,7 @@ async function fetchPlaceCoordinates(placeId) {
 
 // Nearby venue suggestions for Chat.jsx's "Plan a date", in two scopes: "me" searches around coordinates the caller's own browser supplies, "them" searches around the other participant's saved location for a match the caller is actually part of.
 // The match's coordinates are read and used entirely server-side and never appear in the response - "Near Them" returns places, never a location, so using it can't tell you where someone lives.
-router.get("/venues", requireAuth, async (req, res) => {
+router.get("/venues", venueSearchRateLimit, requireAuth, async (req, res) => {
   const scope = req.query.scope === "them" ? "them" : "me";
   let lat;
   let lng;
@@ -207,7 +229,7 @@ router.get("/venues", requireAuth, async (req, res) => {
 
 // Serves a venue photo for the "Plan a date" card. GET /api/venues returns Google's opaque photo *reference*, not an image, so this exchanges one for the bytes - proxied rather than handed to the browser as a signed Google URL, which keeps GOOGLE_MAPS_API_KEY server-side exactly like server/photos.js keeps the S3 bucket private.
 // The photo reference is a query param rather than a path segment because it contains slashes of its own.
-router.get("/venues/photo", requireAuth, async (req, res) => {
+router.get("/venues/photo", venuePhotoRateLimit, requireAuth, async (req, res) => {
   const photoName = typeof req.query.name === "string" ? req.query.name : "";
   if (!VENUE_PHOTO_NAME_PATTERN.test(photoName)) {
     res.status(400).json({ error: "Invalid photo reference." });
