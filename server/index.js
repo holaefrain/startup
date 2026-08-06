@@ -9,6 +9,7 @@ const { s3Client, bucketName } = require("./s3Client");
 const { getDb } = require("./dbClient");
 const { USER_FIELDS, pickFields } = require("./userSchema");
 const authRouter = require("./auth");
+const accountRouter = require("./account");
 const discoverRouter = require("./discover");
 const profileRouter = require("./profile");
 const photosRouter = require("./photos");
@@ -44,6 +45,7 @@ app.use(express.json());
 app.use(cookieParser());
 // Service Deilverable: Backend service endpoints
 app.use("/api", authRouter);
+app.use("/api", accountRouter);
 app.use("/api", discoverRouter);
 app.use("/api", profileRouter);
 app.use("/api", photosRouter);

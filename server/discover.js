@@ -21,7 +21,8 @@ router.get("/discover", async (req, res) => {
   const profiles = await db
     .collection("users")
     .find(
-      { _id: { $nin: [...swipedIds, currentUser._id] }, registered: true, ...seedFilter },
+      // `paused` is $ne: true rather than false so the vast majority of accounts - which predate the field and have no such key at all - still match. `registered` stays exactly as it was: it gates bare signups and backs the bare_profile_ttl index, so pausing was never safe to express through it (see server/account.js).
+      { _id: { $nin: [...swipedIds, currentUser._id] }, registered: true, paused: { $ne: true }, ...seedFilter },
       { projection: PUBLIC_QUERY_PROJECTION }
     )
     .toArray();

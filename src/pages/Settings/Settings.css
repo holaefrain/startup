@@ -7,11 +7,20 @@
   padding: 6.5rem 0 3rem;
 }
 
-/* CSS Deilverable: Use of different types of selectors - ID (#settings) + class, the same trick #profile .profile-header uses: (1,1,0) beats index.css's `#settings section` at (1,0,1) on the class column, stripping the white card that group would otherwise paint. */
-#settings .settings-identity {
+/* CSS Deilverable: Use of different types of selectors - ID (#settings) + class, the same trick #profile .profile-header uses: (1,1,0) beats index.css's `#settings section` at (1,0,1) on the class column. Both section classes are listed because neutralising only one would leave the other wearing the old white card. */
+#settings .settings-identity,
+#settings .settings-group {
   padding: 0;
   border: none;
   background: none;
+}
+
+/* [identity] [rail] [groups] - the same three-column skeleton .profile-shell, .chat-shell and Discover's .profile-card use, so all four signed-in pages put their scroll control in the same column. Aligned to the start rather than centred: the right column is a long list that scrolls on its own, and centring it against a masthead whose height changes with the jump list would leave the two drifting. */
+.settings-shell {
+  display: grid;
+  grid-template-columns: minmax(16rem, 21rem) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0 2.25rem;
 }
 
 /* Left-aligned masthead, the same shape .profile-header takes: the title sets the column's left edge. Spacing lives on the children's own margins because the parts want different gaps, which a single grid gap can't give them. */
@@ -40,7 +49,7 @@
   background: #e9e9e9;
 }
 
-/* The page's only h1. Unlike Profile - where you are the content, so your name is the title - this page's subject is the settings themselves, which demotes the identity below it to identification. Capped at Profile's size rather than Discover's, since nothing here scales with a photo. */
+/* The page's only h1. Unlike Profile - where you are the content, so your name is the title - this page's subject is the settings themselves, which demotes the identity below it to identification. */
 #settings .settings-name {
   margin: 0;
   font-family: var(--font-display);
@@ -60,14 +69,407 @@
   letter-spacing: -0.01em;
 }
 
-/* The same width Chat, Discover and Profile all stack at, so no two pages are ever in different layouts at the same viewport. */
+/* .profile-public-count's register - the one line in the masthead that states a fact rather than naming you. Tabular figures so the date changing doesn't shove the words beside it. */
+.settings-since {
+  margin: 1.15rem 0 0;
+  font-family: var(--font-display);
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.settings-since b {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+
+/* Jump list. Scrolls the groups column rather than the page, since the column is the scroll container - which is also why these are buttons and not anchors. */
+.settings-index {
+  display: grid;
+  gap: 0;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One entry's rule is the next one's top edge, the same way the field rows draw theirs, so no divider is ever orphaned at either end. */
+.settings-index li + li {
+  border-top: 2px solid var(--color-border);
+}
+
+/* Stripped back off index.css's `button` rule, which would otherwise paint every entry as a solid black pill. */
+.settings-index button {
+  width: 100%;
+  min-height: auto;
+  padding: 0.42rem 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-align: left;
+  transition: color 0.14s ease, padding-left 0.14s ease;
+}
+
+.settings-index button:hover {
+  padding-left: 0.4rem;
+  border-color: transparent;
+  background: none;
+  color: var(--color-nav);
+}
+
+/* The current group goes italic rather than coloured - this page spends colour on meaning, and "where am I" is a position, not a signal. Same reasoning .chat-scope-pill inverts instead of tinting. */
+.settings-index button[aria-current="true"] {
+  font-style: italic;
+  font-weight: 900;
+}
+
+/* The shell starts its columns at the top, which would pin the chevrons beside the masthead rather than beside the list they scroll. Centring just this one puts them against the middle of the groups column, where the other three pages sit theirs. Scoped to #settings because .scroll-rail has four owners. */
+#settings .scroll-rail {
+  align-self: center;
+}
+
+/* The scroll container the rail drives. Positioned so each section's offsetTop is measured from this column rather than from the page - the jump list scrolls to those values, and left static they would resolve against an ancestor and overshoot by the masthead's height. Scrollbar hidden because the chevrons beside it are the intended control; the column still scrolls by wheel, trackpad and keyboard. */
+.settings-groups {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 2rem;
+  min-width: 0;
+  max-height: min(70vh, 44rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.settings-groups::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-group {
+  display: grid;
+  gap: 0.85rem;
+}
+
+/* Chat's .chat-title register, stepped down: these label six lists inside one page rather than titling the page itself, so they sit below .settings-name's weight without leaving the display face. */
+.settings-group-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.9;
+}
+
+/* Discover's .profile-fact-card, split the same way it is there: the card owns the outline and the surface, the list owns the padding and the grid. No max-height or overflow here - the whole groups column scrolls as one, so a per-card scroller would fight the shared rail. */
+.settings-card {
+  border: var(--stroke) solid var(--color-text);
+  border-radius: 1.5rem;
+  background: var(--color-surface);
+}
+
+.settings-list {
+  display: grid;
+  margin: 0;
+  padding: 0.35rem 1.5rem;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.62rem 0;
+}
+
+/* The Separator as a border rather than an element, exactly as Discover and Profile draw it - one row's rule is the next one's top edge. */
+.settings-row + .settings-row {
+  border-top: 2px solid var(--color-border);
+}
+
+.settings-label {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 1.14rem;
+  font-weight: 500;
+}
+
+/* The second line under a label, for rows whose consequence isn't obvious from three words. Back in the body face and capped near 65 characters - this is the only running text on the page, and the display face is cut for names and controls, not sentences. */
+.settings-label small {
+  display: block;
+  margin-top: 0.15rem;
+  max-width: 26rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--color-muted);
+}
+
+/* Resets the UA's margin-inline-start on <dd>, which would otherwise indent every control by 40px. */
+.settings-control {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+  margin: 0;
+}
+
+/* Discover's .profile-fact-value badge, promoted to a button - same border, radius and italic register, so the thing you press here is the same object the other pages render read-only. */
+.settings-value {
+  max-width: 20rem;
+  margin: 0;
+  padding: 0.28rem 1.05rem;
+  overflow: hidden;
+  border: 2px solid var(--color-text);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  /* Stated rather than left to the UA, the same reason .profile-field-value states it: buttons and inputs don't agree on a default line-height in every browser. */
+  line-height: 1.3;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease, opacity 0.14s ease;
+}
+
+/* Beats index.css's `button:hover` on source order, not specificity - both are (0,1,1), and this file loads after it. The same footing .chat-mode, .chat-scope-pill and .profile-field-value already stand on. */
+.settings-value:not(:disabled):hover {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-surface);
+}
+
+/* An unfilled field reads as an invitation rather than as a value: dashed, muted, and out of the italic the real values wear. */
+.settings-value-empty {
+  border-style: dashed;
+  border-color: var(--color-muted);
+  color: var(--color-muted);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.settings-value-empty:not(:disabled):hover {
+  border-color: var(--color-text);
+}
+
+/* A control whose endpoint hasn't shipped yet. Dimmed rather than hidden so the page's shape is honest about what's coming, and cursor stays default so it never invites a press that does nothing. */
+.settings-value:disabled,
+.danger-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* Sits inside the card as its own line under the row that failed, rather than replacing the row - the switch has already snapped back by the time this appears, so the message says why it moved, not what to do instead. Red is borrowed from .profile-photo-error rather than --color-alert, which this page reserves for the danger zone. */
+.settings-error {
+  margin: 0;
+  padding: 0 0 0.62rem;
+  color: #b3261e;
+  font-size: 0.9rem;
+}
+
+/* Profile's .profile-field-lock register - names the state of the control beside it rather than adding another value. Uppercased so it reads as a note on the switch rather than as a word in the row. */
+.settings-mark {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+
+.settings-mark-live {
+  color: var(--color-go);
+}
+
+/* Only a hit area: .switch-track and .switch-knob inside it carry the entire appearance, so everything index.css's `button` rule would paint is stripped back off. The hover reset is what keeps this from flashing --color-accent-strong. */
+.settings-switch {
+  display: inline-flex;
+  flex: none;
+  min-height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: none;
+}
+
+.settings-switch:hover {
+  background: none;
+  border-color: transparent;
+}
+
+.settings-switch:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* ---- crisis ---- */
+
+.crisis-note {
+  margin: 0;
+  max-width: 40rem;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--color-muted);
+}
+
+.crisis-list {
+  display: grid;
+  margin: 0;
+  padding: 0.35rem 1.5rem;
+  list-style: none;
+}
+
+.crisis-item {
+  padding: 0.85rem 0;
+}
+
+.crisis-item + .crisis-item {
+  border-top: 2px solid var(--color-border);
+}
+
+.crisis-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.14rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.crisis-desc {
+  margin: 0.2rem 0 0.55rem;
+  max-width: 34rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--color-muted);
+}
+
+.crisis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Chat's .chat-mode pill at the full 3px stroke - these are the only controls on the page that leave the app entirely, and they're the one thing here someone may be trying to hit in a hurry. Tabular figures so the numbers set evenly. */
+.crisis-action {
+  padding: 0.34rem 1.15rem;
+  border: var(--stroke) solid var(--color-text);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.crisis-action:hover {
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+/* ---- danger zone ---- */
+
+/* The only place --color-alert appears on this page. Everywhere else in the app it means an unread count and nothing else, so it's spent here on the one group whose action can't be undone - and nowhere else. */
+.settings-group-danger .settings-card {
+  border-color: var(--color-alert);
+}
+
+.settings-group-danger .settings-group-title {
+  color: var(--color-alert);
+}
+
+.danger-btn {
+  padding: 0.28rem 1.05rem;
+  border: 2px solid var(--color-alert);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-alert);
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  transition: background 0.14s ease, color 0.14s ease, opacity 0.14s ease;
+}
+
+.danger-btn:not(:disabled):hover {
+  background: var(--color-alert);
+  border-color: var(--color-alert);
+  color: var(--color-surface);
+}
+
+/* The same width Chat, Discover and Profile all stack at, so no two pages are ever in different layouts at the same viewport. The jump list goes with the rail: both are ways of moving a column that no longer scrolls on its own. */
 @media (max-width: 60rem) {
   #settings main {
     width: min(100% - 1.5rem, 34rem);
     padding: 5.5rem 0 2rem;
   }
 
+  .settings-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.75rem;
+  }
+
+  /* Scoped to #settings because .scroll-rail is shared - unscoped, this would hide Chat's three rails, Discover's and Profile's too. */
+  #settings .scroll-rail {
+    display: none;
+  }
+
+  .settings-index {
+    display: none;
+  }
+
+  /* The column drops its cap and simply grows once the rail that scrolled it is gone, the same trade .chat-list, .profile-fact-card and .profile-groups make. */
+  .settings-groups {
+    max-height: none;
+    overflow: visible;
+  }
+
   .settings-face {
     width: 7rem;
+  }
+
+  .settings-group-title {
+    font-size: 1.55rem;
+  }
+
+  .settings-list,
+  .crisis-list {
+    padding: 0.35rem 1.15rem;
+  }
+
+  .settings-label {
+    font-size: 1.02rem;
+  }
+
+  .settings-value {
+    max-width: 11rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* The states themselves stay - a switch moving must still read as a change - they just stop easing into place. The switch's own track and knob are covered by the matching block in index.css, and the rail checks the same query in JS before it scrolls. */
+@media (prefers-reduced-motion: reduce) {
+  .settings-value,
+  .settings-index button,
+  .crisis-action,
+  .danger-btn {
+    transition: none;
   }
 }

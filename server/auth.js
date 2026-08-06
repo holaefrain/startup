@@ -169,6 +169,10 @@ router.get("/user/me", async (req, res) => {
     ...pickFields(user, USER_FIELDS),
     photoKeys: user.photoKeys ?? [],
     visibility: user.visibility ?? {},
+    // Listed here rather than added to USER_FIELDS on purpose: that list also feeds pickFields(req.body, USER_FIELDS) in the signup handler, so putting createdAt in it would let a client post its own value and pick when the bare_profile_ttl index expires the document. Same reasoning that keeps password/token/registered out of it - this is a read-only projection of a field only the server ever writes.
+    createdAt: user.createdAt ?? null,
+    // Written only by POST /api/account/pause (server/account.js), and out of USER_FIELDS for the same reason. Defaulted rather than passed through so an account that predates the field reads as visible instead of undefined, which is the same default server/discover.js's `$ne: true` filter applies.
+    paused: user.paused === true,
   });
 });
 
