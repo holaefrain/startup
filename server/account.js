@@ -5,6 +5,8 @@ const { v4: uuidv4 } = require("uuid");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser } = require("./authHelpers");
 const { setAuthCookie } = require("./authCookie");
+const { deleteUsersCompletely } = require("./accountCascade");
+const { closeConnectionsForUser } = require("./websocket");
 
 // Account-level state that isn't part of the profile: things you'd change about the account itself rather than about what other people see. Kept out of server/profile.js because PATCH /api/profile is allow-listed against PROFILE_EDITABLE_FIELDS by design, and none of these are profile fields.
 
@@ -167,6 +169,62 @@ router.post("/account/pause", accountWriteRateLimit, requireAuth, async (req, re
   await db.collection("users").updateOne({ _id: req.user._id }, { $set: { paused } });
 
   res.json({ paused });
+});
+
+// Tighter than the write limiter: each call assembles every message the account has ever been part of, so this is the one route here whose cost scales with how much history someone has.
+const exportRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { msg: "Too many export requests. Please try again later." },
+});
+
+// Everything this account owns, as one JSON file. No current-password check, unlike the routes above: this hands the session's owner data they can already read screen by screen in the app, so demanding a password would be friction without a corresponding risk.
+router.get("/account/export", exportRateLimit, requireAuth, async (req, res) => {
+  const { user } = req;
+  const db = await getDb();
+
+  const matches = await db
+    .collection("matches")
+    .find({ $or: [{ userA: user._id }, { userB: user._id }] })
+    .toArray();
+  const matchIds = matches.map((match) => match._id);
+
+  // A thread's messages include what the other person wrote, which is the same thing Chat.jsx already shows - an export of a conversation that omitted half of it wouldn't be the conversation. Nothing here reaches into the other party's profile.
+  const messages = await db.collection("messages").find({ matchId: { $in: matchIds } }).toArray();
+  const swipes = await db
+    .collection("swipes")
+    .find({ $or: [{ fromUserId: user._id }, { toUserId: user._id }] })
+    .toArray();
+
+  // Destructured off rather than projected away at the query, because req.user is the document requireAuth already loaded - re-fetching it just to drop two fields would be a second round trip. `token` is the live session and `password` is the hash; neither belongs in a file that lands in someone's Downloads folder.
+  const { password, token, ...account } = user;
+
+  const filename = `debrief-data-${new Date().toISOString().slice(0, 10)}.json`;
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.send(JSON.stringify({ exportedAt: new Date().toISOString(), account, matches, messages, swipes }, null, 2));
+});
+
+// Irreversible, and scoped to the session's own account - there is no id in the request to get wrong. The current-password check is the same one the credential routes use, for a stronger version of the same reason: a browser someone walked away from shouldn't be able to erase the account.
+router.delete("/account", credentialRateLimit, requireAuth, async (req, res) => {
+  const { currentPassword } = req.body;
+
+  const bad = await verifyCurrentPassword(req.user, currentPassword);
+  if (bad) {
+    res.status(bad.status).json(bad.body);
+    return;
+  }
+
+  const db = await getDb();
+  const result = await deleteUsersCompletely(db, [req.user]);
+
+  // After the cascade, not before: closing first would leave a window where an open tab reconnects mid-delete and re-registers itself. Once the user document is gone, the token lookup in websocket.js's upgrade handler finds nothing and destroys the socket, so a reconnect can't succeed.
+  closeConnectionsForUser(req.user._id);
+
+  res.clearCookie("token");
+  res.json(result);
 });
 
 module.exports = router;
