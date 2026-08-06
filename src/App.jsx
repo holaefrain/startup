@@ -4,6 +4,7 @@ import Signup from "./pages/Signup/Signup.jsx";
 import Discover from "./pages/Discover/Discover.jsx";
 import Chat from "./pages/Chat/Chat.jsx";
 import Profile from "./pages/Profile/Profile.jsx";
+import Settings from "./pages/Settings/Settings.jsx";
 import Footer from "./components/Footer.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { DiscoverModeProvider } from "./context/DiscoverModeContext.jsx";
@@ -69,7 +70,7 @@ export default function App() {
               path="/settings"
               element={
                 <ProtectedRoute>
-                  <PlaceholderPage title="Settings" />
+                  <Settings />
                 </ProtectedRoute>
               }
             />

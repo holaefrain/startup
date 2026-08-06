@@ -180,6 +180,7 @@ form button,
 #discover main,
 #chat main,
 #profile main,
+#settings main,
 #signup main {
   display: grid;
   gap: 1.25rem;
@@ -188,6 +189,7 @@ form button,
 #discover section,
 #chat section,
 #profile section,
+#settings section,
 #signup section {
   padding: 1.25rem;
   /* border: 1px solid var(--color-border); */

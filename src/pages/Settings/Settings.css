@@ -1,0 +1,73 @@
+/* Settings-exclusive styles, split out of index.css alongside Discover.css, Chat.css, Profile.css and AppNav.css - every selector here is used only by src/pages/Settings/Settings.jsx. */
+
+/* Same wider column the other signed-in pages take rather than the shared 72rem one, since this page has no header/footer either. The top padding is what clears AppNav's fixed 4rem toggle; margin stays inherited from index.css's `main { margin: 0 auto }` so the column still centers. */
+#settings main {
+  width: min(100% - 3rem, 78rem);
+  max-width: none;
+  padding: 6.5rem 0 3rem;
+}
+
+/* CSS Deilverable: Use of different types of selectors - ID (#settings) + class, the same trick #profile .profile-header uses: (1,1,0) beats index.css's `#settings section` at (1,0,1) on the class column, stripping the white card that group would otherwise paint. */
+#settings .settings-identity {
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+/* Left-aligned masthead, the same shape .profile-header takes: the title sets the column's left edge. Spacing lives on the children's own margins because the parts want different gaps, which a single grid gap can't give them. */
+.settings-identity {
+  display: grid;
+  gap: 0;
+}
+
+/* Discover's photo frame - the stroke plus a page-coloured inset, where the padding is the frame since box-sizing is border-box globally. Squared rather than round: every photo in this app is framed this way, and a circle here would invent a shape the rest of the app doesn't use. */
+.settings-face {
+  width: 8.5rem;
+  aspect-ratio: 1;
+  margin-bottom: 1.6rem;
+  padding: 3px;
+  border: var(--stroke) solid var(--color-text);
+  background: var(--color-page);
+}
+
+.settings-face img,
+.settings-face svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* The ground Chat's .chat-panel-face already shows while a photo loads. */
+  background: #e9e9e9;
+}
+
+/* The page's only h1. Unlike Profile - where you are the content, so your name is the title - this page's subject is the settings themselves, which demotes the identity below it to identification. Capped at Profile's size rather than Discover's, since nothing here scales with a photo. */
+#settings .settings-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 4.6vw, 4.1rem);
+  font-weight: 900;
+  letter-spacing: -0.038em;
+  line-height: 0.88;
+}
+
+/* The bold italic register every secondary line in Chat, Discover and Profile uses. Not muted: on this page the email is identification rather than an aside, exactly as .profile-email is. */
+.settings-email {
+  margin: 0.55rem 0 0;
+  font-family: var(--font-display);
+  font-size: 1.18rem;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* The same width Chat, Discover and Profile all stack at, so no two pages are ever in different layouts at the same viewport. */
+@media (max-width: 60rem) {
+  #settings main {
+    width: min(100% - 1.5rem, 34rem);
+    padding: 5.5rem 0 2rem;
+  }
+
+  .settings-face {
+    width: 7rem;
+  }
+}
