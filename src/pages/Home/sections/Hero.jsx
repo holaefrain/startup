@@ -30,19 +30,6 @@ export default function Hero() {
         <figure><img src={homepage2} alt="" /></figure>
         <figure><img src={homepage3} alt="" /></figure>
       </div>
-
-      <div className="home-motion-key" aria-hidden="true">
-        <div>
-          <p>HOW THE SCROLL FEELS</p>
-          <span>Pinned scene · gentle vertical drift · crossfade at the handoff</span>
-        </div>
-        <ol>
-          <li className="is-current"><i></i>INTRO</li>
-          <li><i></i>WHY</li>
-          <li><i></i>HOW</li>
-          <li><i></i>APPROACH</li>
-        </ol>
-      </div>
     </section>
   );
 }
