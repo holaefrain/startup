@@ -25,7 +25,7 @@ async function isBlockedPair(db, firstId, secondId) {
   return !!existing;
 }
 
-// Idempotent on purpose: pressing block twice - or blocking someone who already blocked you - is not an error, and an upsert means correctness doesn't depend on the unique index existing (see server/createSafetyIndexes.js, which the deployed database has to be given separately).
+// Idempotent on purpose: pressing block twice - or blocking someone who already blocked you - is not an error, and an upsert means correctness doesn't depend on the unique index existing (see server/createIndexes.js, which the deployed database has to be given separately).
 async function createBlock(db, blockerId, blockedId) {
   await db
     .collection("blocks")

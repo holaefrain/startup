@@ -1,6 +1,7 @@
 const path = require("path");
 const express = require("express");
 const multer = require("multer");
+const { v4: uuidv4 } = require("uuid");
 const { PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const { s3Client, bucketName } = require("./s3Client");
 const { getDb } = require("./dbClient");
@@ -96,8 +97,9 @@ router.post("/profile/photo", requireAuth, upload.single("photo"), async (req, r
     return;
   }
 
+  // A random component rather than the slot number this used to use. `existingKeys.length + 1` assumed photos were only ever appended, so deleting one from the middle dropped the length back onto a number already in use: a user with slots 1 and 3 who deleted 2 would compute key 3 for their next upload and overwrite the photo still sitting there, ending up with two entries pointing at one object and the original gone. Nothing reads meaning out of this part of the key - server/photos.js indexes photoKeys by array position, not by filename - so it only has to be unique, and a v4 is that without needing a counter kept in step with the array.
   const extension = path.extname(req.file.originalname) || "";
-  const key = `photos/${user._id}/${existingKeys.length + 1}${extension}`;
+  const key = `photos/${user._id}/${uuidv4()}${extension}`;
   await s3Client.send(
     new PutObjectCommand({ Bucket: bucketName, Key: key, Body: req.file.buffer, ContentType: req.file.mimetype })
   );

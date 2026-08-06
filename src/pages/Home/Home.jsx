@@ -88,7 +88,8 @@ export default function Home() {
       {/* Navigation */}
       <nav id="main-nav">
         <div className="nav-content">
-          <h2 className="nav-bar-quote">TIRED OF DATING? LET'S AIR IT OUT</h2>
+          <Link className="home-wordmark" to="/">DEBRIEF</Link>
+          <p className="nav-bar-quote">A DATING APP MEANT FOR DATING</p>
           <div className="login-trigger">
             <button
               className={`nav-cta${showModal ? " hidden" : ""}`}

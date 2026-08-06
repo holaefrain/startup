@@ -1,76 +1,47 @@
-import { useEffect, useRef } from "react";
-import { animate, createScope, createTimeline, stagger } from "animejs";
+import { Link } from "react-router-dom";
 import homepage1 from "../../../assets/img/homepage1.jpg";
 import homepage2 from "../../../assets/img/homepage2.jpg";
 import homepage3 from "../../../assets/img/homepage3.jpeg";
 
-const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-const REVEAL_TARGETS = ".hero-photo, .hero-title h1, .hero-subtitle h2";
-
 export default function Hero() {
-  const root = useRef(null);
-
-  useEffect(() => {
-    const scope = createScope({
-      root,
-      mediaQueries: { reduceMotion: REDUCE_MOTION_QUERY },
-    }).add((self) => {
-      if (self.matches.reduceMotion) {
-        animate(REVEAL_TARGETS, { opacity: 1, y: 0, duration: 0 });
-        return;
-      }
-
-      createTimeline({ defaults: { ease: "outExpo" } })
-        .add(".hero-photo", {
-          opacity: [0, 1],
-          y: [24, 0],
-          duration: 700,
-          delay: stagger(80),
-        })
-        .add(
-          ".hero-title h1",
-          {
-            opacity: [0, 1],
-            y: ["100%", "0%"],
-            duration: 800,
-          },
-          "-=400"
-        )
-        .add(
-          ".hero-subtitle h2",
-          {
-            opacity: [0, 1],
-            duration: 500,
-          },
-          "-=300"
-        );
-    });
-
-    return () => scope.revert();
-  }, []);
-
   return (
-    <section id="hero-section" ref={root}>
-      <div className="hero-content">
-        <div className="hero-photo-grid" aria-label="Homepage preview images">
-          <figure className="hero-photo">
-            <img src={homepage1} alt="Homepage preview 1" />
-          </figure>
-          <figure className="hero-photo">
-            <img src={homepage2} alt="Homepage preview 2" />
-          </figure>
-          <figure className="hero-photo">
-            <img src={homepage3} alt="Homepage preview 3" />
-          </figure>
-        </div>
+    <section className="home-scene home-hero" id="hero-section">
+      <div className="home-copy home-hero-copy">
+        <p className="scene-kicker">01 — THE POINT</p>
+        <h1>DATING,<br />BUT WITH<br />A POINT.</h1>
+        <p className="home-hero-lede">Less swiping. More intention.</p>
+        <p className="home-hero-body">Meet people who are ready to make a plan—<br />then keep the conversation moving.</p>
+        <Link className="home-primary-cta" to="/signup">CREATE YOUR PROFILE</Link>
+        <p className="home-scroll-cue">SCROLL TO START ↓</p>
+      </div>
 
-        {/* HTML Deilverable: Text */}
-        <div className="hero-title">
-          <h1>DEBRIEF</h1>
+      <div className="hero-portrait-wrap" aria-label="People enjoying a date outdoors">
+        <figure className="hero-portrait">
+          <img src={homepage1} alt="A couple sharing a joyful moment outdoors" />
+          <figcaption>CONVERSATIONS WITH CHEMISTRY</figcaption>
+        </figure>
+        <aside className="hero-note">
+          <h2>BUILT FOR<br />THE AFTER.</h2>
+          <p>The match is only<br />where things begin.</p>
+        </aside>
+      </div>
+
+      <div className="hero-photo-stack" aria-hidden="true">
+        <figure><img src={homepage2} alt="" /></figure>
+        <figure><img src={homepage3} alt="" /></figure>
+      </div>
+
+      <div className="home-motion-key" aria-hidden="true">
+        <div>
+          <p>HOW THE SCROLL FEELS</p>
+          <span>Pinned scene · gentle vertical drift · crossfade at the handoff</span>
         </div>
-        <div className="hero-subtitle">
-          <h2>A DATING APP MEANT FOR DATING</h2>
-        </div>
+        <ol>
+          <li className="is-current"><i></i>INTRO</li>
+          <li><i></i>WHY</li>
+          <li><i></i>HOW</li>
+          <li><i></i>APPROACH</li>
+        </ol>
       </div>
     </section>
   );

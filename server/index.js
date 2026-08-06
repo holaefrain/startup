@@ -2,10 +2,12 @@ const path = require("path");
 const http = require("http");
 const express = require("express");
 const multer = require("multer");
+const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
 const { ObjectId } = require("mongodb");
 const { PutObjectCommand } = require("@aws-sdk/client-s3");
 const { s3Client, bucketName } = require("./s3Client");
+const { deletePhotoObjects } = require("./photoStorage");
 const { getDb } = require("./dbClient");
 const { USER_FIELDS, pickFields } = require("./userSchema");
 const authRouter = require("./auth");
@@ -36,6 +38,17 @@ const upload = multer({
   },
 });
 
+// The only unauthenticated write in the app, and the most expensive one: each call can push MAX_PHOTOS x MAX_FILE_SIZE_BYTES straight into S3 before anything has proved the caller is a person. Without a limit that's unbounded storage and bandwidth billed to us by anyone who can reach the port, so this is a cost control first and a spam control second.
+//
+// An hour rather than the 15 minutes the other limiters use, and a smaller budget: registering is a once-per-person action, not something a real user repeats. 10 still absorbs retrying after a 409 on a taken email, a dropped upload, and several people sharing one campus or office NAT.
+const signupRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many signup attempts. Please try again later." },
+});
+
 // Service Deilverable: Node.js/Express HTTP service
 const app = express();
 
@@ -56,7 +69,8 @@ app.use("/api", safetyRouter);
 app.use("/api", placesRouter);
 
 // Single signup endpoint: the wizard collects all 5 steps in one component and submits once at the end, so this does one insert rather than creating a document in step 1 and patching it across separate requests.
-app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => {
+// signupRateLimit precedes the multer middleware deliberately: ordered the other way, a rejected request would still have had its up-to-64MB body buffered into memory before anything looked at the budget, which is most of what the limit is there to prevent. Same reasoning as the requireAuth-before-upload ordering in server/profile.js.
+app.post("/api/signup", signupRateLimit, upload.array("photos", MAX_PHOTOS), async (req, res) => {
   const fields = pickFields(req.body, USER_FIELDS);
   const db = await getDb();
   const users = db.collection("users");
@@ -77,7 +91,8 @@ app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => 
   // Generated up front so the same id is both the Mongo _id and the S3 key prefix for this user's photos. Always fresh, never reused from an existing doc - an abandoned bare (no-password) profile from an earlier interrupted attempt is left alone rather than overwritten, and instead ages out on its own via the TTL index on createdAt (see the index setup script/notes).
   const userId = new ObjectId();
 
-  const photoKeys = await Promise.all(
+  // allSettled rather than all: Promise.all rejects the moment one upload fails, but it doesn't cancel the others - those keep going and land in the bucket with nothing left to reference them. Settling every one first is what makes the keys that did succeed knowable, and therefore deletable.
+  const uploads = await Promise.allSettled(
     req.files.map((file, index) => {
       const extension = path.extname(file.originalname) || "";
       const key = `photos/${userId}/${index + 1}${extension}`;
@@ -94,10 +109,23 @@ app.post("/api/signup", upload.array("photos", MAX_PHOTOS), async (req, res) => 
     })
   );
 
+  const photoKeys = uploads.filter((result) => result.status === "fulfilled").map((result) => result.value);
+  const uploadFailure = uploads.find((result) => result.status === "rejected");
+  if (uploadFailure) {
+    // A signup that can't store all of its photos isn't accepted with some of them missing - the wizard submits them as one set, so a partial result is a failure, and the ones that did upload are removed rather than left behind unreferenced.
+    await deletePhotoObjects(photoKeys);
+    console.error("Signup photo upload failed", uploadFailure.reason?.message);
+    res.status(502).json({ error: "Couldn't upload your photos. Please try again." });
+    return;
+  }
+
   try {
     // DB Deilverable: Stores data in MongoDB
     await users.insertOne({ _id: userId, ...fields, photoKeys, registered: false, createdAt: new Date() });
   } catch (err) {
+    // The photos are already in S3 by this point, and the document that would have pointed at them is never going to exist - so they're removed here rather than becoming objects nothing in the system knows about. Best-effort on purpose: the response below is about the signup, not about the tidying up.
+    await deletePhotoObjects(photoKeys);
+
     // The email_unique_registered index can only ever conflict here if `fields` somehow carried a password through pickFields, which USER_FIELDS excludes by design - this is defense-in-depth, not the primary guard (the findOne check above is).
     if (err.code === 11000) {
       res.status(409).json({ error: "An account with this email already exists. Please log in instead." });

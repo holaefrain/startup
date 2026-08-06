@@ -5,7 +5,9 @@ import { onScroll, utils } from "animejs";
 // progress is within this distance of its index.
 const ACTIVE_THRESHOLD = 0.5;
 
-// implements a scroll-driven "pinned panels" effect — it takes an array of sections (from sections/index.js) and turns scrolling through them into a crossfade animation, rather than normal page-flow scrolling.
+// Keeps the page anchored while each scene drifts into the next. The tiny
+// vertical offset makes the handoff feel like a continuous camera move rather
+// than a stack of slides fading through one another.
 
 export default function PinnedScrollStage({ sections }) {
   const trackRef = useRef(null);
@@ -24,7 +26,9 @@ export default function PinnedScrollStage({ sections }) {
           if (!panel) return;
           const distance = Math.abs(sceneProgress - i);
           const isActive = distance < ACTIVE_THRESHOLD;
-          utils.set(panel, { opacity: Math.max(0, 1 - distance) });
+          const opacity = Math.max(0, 1 - distance * 1.35);
+          const offset = (i - sceneProgress) * 28;
+          utils.set(panel, { opacity, translateY: offset });
           panel.style.pointerEvents = isActive ? "auto" : "none";
           panel.inert = !isActive;
         });

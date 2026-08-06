@@ -15,6 +15,8 @@ import "./Discover.css";
 // Already shown elsewhere on the card - name (h2), age/height/location (icon row), gender/pronouns/sexuality (subtitle line) - so skipped when rendering the field table below. Must stay in step with Chat's PROFILE_HEADER_FIELDS, which splits the same profile the same way.
 const CARD_HEADER_FIELDS = new Set(["first_name", "last_name", "age", "height", "location", "gender", "pronouns", "sexuality"]);
 const REDUCE_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+// How close to the end of the loaded stack a swipe gets before the next page is fetched. Far enough ahead that the request finishes while there are still cards to swipe, so paging never shows up as a pause.
+const PREFETCH_AHEAD = 10;
 
 // One heart for the page: the like button and the match overlay's badge are the same gesture, so they get the same shape. Sizes to 1em by default, which the swipe button overrides in CSS since it scales off the photo rather than off type.
 function HeartIcon() {
@@ -35,6 +37,12 @@ export default function Discover() {
   // Holds { matchId, profile } for the just-matched person, or null - `profile` is the swiped profile object swipe() already has in scope (photoKeys, first_name, id and all), not a separate fetch.
   const [matchNotice, setMatchNotice] = useState(null);
   const [reporting, setReporting] = useState(false);
+  // Cursor for the next page of the stack, or null once the server says there's nothing behind it.
+  const [nextCursor, setNextCursor] = useState(null);
+  // Bumped on every reset (mode switch, reset-demo) so a page request already in flight can tell its results are stale and drop them - otherwise switching modes mid-fetch appends the old mode's profiles onto the new stack.
+  const loadGenerationRef = useRef(0);
+  // Stops the prefetch effect firing a second request for the same page while the first is still open.
+  const loadingMoreRef = useRef(false);
   const fieldCardRef = useRef(null);
   // Which chevrons are still worth pressing. Both true when the card doesn't overflow at all, which disables the pair rather than leaving two controls that do nothing.
   const [fieldEdges, setFieldEdges] = useState({ atStart: true, atEnd: true });
@@ -66,15 +74,53 @@ export default function Discover() {
     setIndex(0);
     setError("");
     setMatchNotice(null);
+    setNextCursor(null);
+    // Invalidates any page request still in flight from the previous mode, and clears the in-flight flag so the new stack can start paging immediately rather than waiting on a response it's going to discard anyway.
+    loadGenerationRef.current += 1;
+    loadingMoreRef.current = false;
+    const generation = loadGenerationRef.current;
+
     // HTML Deilverable: DB data placeholder
     fetch(`/api/discover?mode=${mode}`)
       .then((response) => {
         if (!response.ok) throw new Error("Failed to load profiles.");
         return response.json();
       })
-      .then(setProfiles)
-      .catch(() => setError("Couldn't load profiles. Please try again."));
+      .then((data) => {
+        if (generation !== loadGenerationRef.current) return;
+        setProfiles(data.profiles);
+        setNextCursor(data.nextCursor);
+      })
+      .catch(() => {
+        if (generation !== loadGenerationRef.current) return;
+        setError("Couldn't load profiles. Please try again.");
+      });
   }, [mode, resetVersion]);
+
+  // Appends the next page as the stack runs low. Deliberately silent on failure: the cards already loaded still swipe fine, so a failed prefetch is worth a retry on the next swipe rather than an error banner over a working stack. Leaving nextCursor untouched on failure is what allows that retry.
+  useEffect(() => {
+    if (!nextCursor || profiles === null) return;
+    if (index < profiles.length - PREFETCH_AHEAD) return;
+    if (loadingMoreRef.current) return;
+
+    loadingMoreRef.current = true;
+    const generation = loadGenerationRef.current;
+
+    fetch(`/api/discover?mode=${mode}&after=${encodeURIComponent(nextCursor)}`)
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to load more profiles.");
+        return response.json();
+      })
+      .then((data) => {
+        if (generation !== loadGenerationRef.current) return;
+        setProfiles((current) => [...(current ?? []), ...data.profiles]);
+        setNextCursor(data.nextCursor);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (generation === loadGenerationRef.current) loadingMoreRef.current = false;
+      });
+  }, [index, nextCursor, profiles, mode]);
 
   const profile = profiles?.[index];
   const photoKeys = profile?.photoKeys ?? [];

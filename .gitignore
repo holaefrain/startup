@@ -3,3 +3,4 @@ dist/
 .env
 dbConfig.json
 src/assets/img/references/*.svg
+designs/
