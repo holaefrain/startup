@@ -1,0 +1,25 @@
+/* Only what's specific to deleting. The dialog shell - card, title, lede, fields, footer buttons - is .app-dialog in index.css, shared with ReportDialog. */
+
+/* Boxed rather than left as a bare list, so the consequences read as one object to take in before the two fields below rather than as body copy to skim past. */
+.delete-loss {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 1.15rem;
+  padding: 0.9rem 1.1rem 0.9rem 2.1rem;
+  border: 2px solid var(--color-border);
+  border-radius: 1rem;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+/* The one red thing in the dialog, and it's the button that does the irreversible part - the same discipline the Settings page's danger zone follows, where --color-alert marks the action that can't be taken back and nothing else. */
+.delete-go {
+  background: var(--color-alert);
+  border-color: var(--color-alert);
+  color: var(--color-surface);
+}
+
+.delete-go:not(:disabled):hover {
+  background: #d32b21;
+  border-color: #d32b21;
+}

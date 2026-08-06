@@ -276,6 +276,129 @@ form button,
   transform: translateX(1.25rem);
 }
 
+/* The modal shell, shared by ReportDialog and DeleteAccountDialog - lives here rather than with either owner for the same reason .scroll-rail and .switch-track do. The shell is the card, the headings, the fields and the two footer buttons; whatever a given dialog asks inside it (the report's reason pills, the delete confirmation's typed word) stays with that component. */
+.app-dialog {
+  width: min(100% - 2rem, 32rem);
+  max-height: min(90vh, 44rem);
+  padding: 0;
+  overflow-y: auto;
+  border: var(--stroke) solid var(--color-text);
+  border-radius: 1.5rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.app-dialog::backdrop {
+  background: rgb(5 5 5 / 45%);
+}
+
+/* Overrides `form { display: grid; gap: 0.85rem; max-width: 42rem }` above - that gap would double up with the margins the blocks inside already carry, and the max-width would stop the form filling the dialog. */
+.app-dialog-body {
+  display: block;
+  max-width: none;
+  padding: 1.6rem 1.75rem 1.5rem;
+}
+
+.app-dialog-title {
+  margin: 0 0 0.3rem;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+
+.app-dialog-lede {
+  margin: 0 0 1.15rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+/* The one clause in a dialog someone has to believe before pressing the button, so it's the only thing in the lede at full contrast. */
+.app-dialog-lede b {
+  color: var(--color-text);
+}
+
+.app-dialog-label {
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.app-dialog-field {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.app-dialog-field input,
+.app-dialog-field textarea {
+  width: 100%;
+  min-height: auto;
+  padding: 0.55rem 0.9rem;
+  border: 2px solid var(--color-text);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.app-dialog-field textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.app-dialog-error {
+  margin: 0 0 1rem;
+  color: #b3261e;
+  font-size: 0.9rem;
+}
+
+.app-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.app-dialog-cancel,
+.app-dialog-submit {
+  min-height: auto;
+  padding: 0.4rem 1.3rem;
+  border: 2px solid var(--color-text);
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 800;
+  transition: background 0.14s ease, color 0.14s ease, opacity 0.14s ease;
+}
+
+.app-dialog-cancel {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.app-dialog-cancel:hover {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-surface);
+}
+
+.app-dialog-submit {
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+.app-dialog-submit:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
 @media (max-width: 640px) {
   main,
   header,
@@ -290,6 +413,11 @@ form button,
 
 /* Moved here with the switch itself - the knob still travels and the track still changes colour, they just arrive rather than slide. */
 @media (prefers-reduced-motion: reduce) {
+  .app-dialog-cancel,
+  .app-dialog-submit {
+    transition: none;
+  }
+
   .switch-track,
   .switch-knob {
     transition: none;

@@ -48,15 +48,15 @@ export default function ReportDialog({ person, context, onClose, onReported }) {
 
   return (
     // onClose covers Escape as well as close() - without it, dismissing with the keyboard would leave the parent still rendering a dialog the browser has already hidden.
-    <dialog ref={dialogRef} className="report-dialog" onClose={onClose}>
-      <form className="report-body" onSubmit={submit}>
-        <h2 className="report-title">Report {name}</h2>
-        <p className="report-lede">
+    <dialog ref={dialogRef} className="app-dialog" onClose={onClose}>
+      <form className="app-dialog-body" onSubmit={submit}>
+        <h2 className="app-dialog-title">Report {name}</h2>
+        <p className="app-dialog-lede">
           A reviewer reads this, usually within a day. <b>{name} is never notified</b>, and never sees your name.
         </p>
 
         <fieldset className="report-reasons">
-          <legend className="report-legend">Reason</legend>
+          <legend className="app-dialog-label">Reason</legend>
           {REPORT_REASONS.map((option) => (
             <label key={option.id}>
               <input
@@ -71,8 +71,8 @@ export default function ReportDialog({ person, context, onClose, onReported }) {
           ))}
         </fieldset>
 
-        <label className="report-field">
-          <span className="report-legend">What happened (optional)</span>
+        <label className="app-dialog-field">
+          <span className="app-dialog-label">What happened (optional)</span>
           <textarea
             value={details}
             maxLength={2000}
@@ -89,16 +89,16 @@ export default function ReportDialog({ person, context, onClose, onReported }) {
         </label>
 
         {error && (
-          <p role="alert" className="report-error">
+          <p role="alert" className="app-dialog-error">
             {error}
           </p>
         )}
 
-        <div className="report-actions">
-          <button type="button" className="report-cancel" onClick={() => dialogRef.current?.close()}>
+        <div className="app-dialog-actions">
+          <button type="button" className="app-dialog-cancel" onClick={() => dialogRef.current?.close()}>
             Cancel
           </button>
-          <button type="submit" className="report-submit" disabled={sending}>
+          <button type="submit" className="app-dialog-submit" disabled={sending}>
             {sending ? "Sending..." : "Send report"}
           </button>
         </div>

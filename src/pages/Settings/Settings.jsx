@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AppNav from "../../components/AppNav.jsx";
 import ChevronIcon from "../../components/ChevronIcon.jsx";
 import ReportDialog from "../../components/ReportDialog.jsx";
+import DeleteAccountDialog from "../../components/DeleteAccountDialog.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useDiscoverMode } from "../../context/DiscoverModeContext.jsx";
 import { CRISIS_NOTE, CRISIS_RESOURCES } from "../../constants/crisisResources.js";
@@ -67,7 +68,7 @@ function SettingsSwitch({ checked, label, onClick, disabled }) {
 // React Deilverable Part 1: Components
 export default function Settings() {
   const navigate = useNavigate();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const { mode, toggleMode, resetDemoMode, resetting } = useDiscoverMode();
   const groupsRef = useRef(null);
   // Which chevrons are still worth pressing. Both true when the column doesn't overflow at all, which disables the pair rather than leaving two controls that do nothing.
@@ -83,6 +84,7 @@ export default function Settings() {
   const [reportTarget, setReportTarget] = useState(null);
   const [matches, setMatches] = useState(null);
   const [pickingReport, setPickingReport] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const hasPhoto = (user?.photoKeys?.length ?? 0) > 0;
 
@@ -219,6 +221,18 @@ export default function Settings() {
               setReportTarget(null);
               // The blocked list is on this very page, so it has to reflect the block that just happened rather than waiting for a reload.
               if (wasBlocked) loadBlocked();
+            }}
+          />
+        )}
+
+        {deleting && (
+          <DeleteAccountDialog
+            photoCount={user?.photoKeys?.length ?? 0}
+            onClose={() => setDeleting(false)}
+            onDeleted={() => {
+              // The server has already cleared the cookie; this drops the client's copy of the user so ProtectedRoute doesn't briefly render a page for an account that no longer exists. Same two-step shape AppNav's log out uses.
+              logout();
+              navigate("/");
             }}
           />
         )}
@@ -514,10 +528,11 @@ export default function Settings() {
                       Read
                     </button>
                   </SettingsRow>
+                  {/* A plain link rather than a fetch: the endpoint already answers with Content-Disposition: attachment, so the browser saves the file itself - reading it into memory only to rebuild it as a blob would be the same download with extra steps and a copy of every message in the tab. */}
                   <SettingsRow label="Download my data" hint="Your profile, matches and messages as a JSON file.">
-                    <button type="button" className="settings-value" disabled>
+                    <a className="settings-value" href="/api/account/export" download>
                       Download
-                    </button>
+                    </a>
                   </SettingsRow>
                 </dl>
               </div>
@@ -532,7 +547,7 @@ export default function Settings() {
                     label="Delete my account"
                     hint="Erases your profile, photos, matches, messages and swipes. There is no grace period and nothing can be restored afterward."
                   >
-                    <button type="button" className="danger-btn" disabled>
+                    <button type="button" className="danger-btn" onClick={() => setDeleting(true)}>
                       Delete
                     </button>
                   </SettingsRow>
