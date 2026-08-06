@@ -20,7 +20,7 @@ function chunk(items, size) {
 async function deleteUsersCompletely(db, userDocs) {
   const userIds = userDocs.map((user) => user._id);
   if (userIds.length === 0) {
-    return { users: 0, matches: 0, messages: 0, swipes: 0, photos: 0 };
+    return { users: 0, matches: 0, messages: 0, swipes: 0, blocks: 0, reports: 0, photos: 0 };
   }
 
   const affectedMatches = await db
@@ -35,7 +35,13 @@ async function deleteUsersCompletely(db, userDocs) {
     .collection("swipes")
     .deleteMany({ $or: [{ fromUserId: { $in: userIds } }, { toUserId: { $in: userIds } }] });
 
-  // TODO(step 6): reports and blocks join the cascade when those collections land - a block pointing at a deleted account would silently keep filtering nobody.
+  // Blocks go in both directions: a row pointing at an account that no longer exists filters nobody and can never be lifted from the Settings list, so it's pure garbage either way round.
+  const blocks = await db
+    .collection("blocks")
+    .deleteMany({ $or: [{ blockerId: { $in: userIds } }, { blockedId: { $in: userIds } }] });
+
+  // Reports are deliberately asymmetric. Ones *about* a deleted account go, because there's no longer an account to action. Ones *filed by* it stay: they concern accounts that may still be active and may still need review, and a reviewer's queue emptying itself because the reporter left is how repeat behaviour goes unnoticed.
+  const reports = await db.collection("reports").deleteMany({ reportedUserId: { $in: userIds } });
 
   const photoKeys = userDocs.flatMap((user) => user.photoKeys ?? []);
   for (const batch of chunk(photoKeys, S3_DELETE_BATCH)) {
@@ -51,6 +57,8 @@ async function deleteUsersCompletely(db, userDocs) {
     matches: matches.deletedCount,
     messages: messages.deletedCount,
     swipes: swipes.deletedCount,
+    blocks: blocks.deletedCount,
+    reports: reports.deletedCount,
     photos: photoKeys.length,
   };
 }

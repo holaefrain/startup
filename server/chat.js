@@ -3,6 +3,7 @@ const { ObjectId } = require("mongodb");
 const { getDb } = require("./dbClient");
 const { getAuthenticatedUser, requireMatchMembership } = require("./authHelpers");
 const { PUBLIC_QUERY_PROJECTION, projectVisibleFields } = require("./userSchema");
+const { blockedUserIds } = require("./blocks");
 const { broadcastToUsers } = require("./websocket");
 
 const MAX_MESSAGE_LENGTH = 2000;
@@ -68,9 +69,15 @@ async function requireAuth(req, res, next) {
 // Match list for the current user, each entry paired with the other participant's visibility-filtered info and a summary of the most recent message (or null for a fresh match nobody's messaged in yet).
 router.get("/matches", requireAuth, async (req, res) => {
   const db = await getDb();
+  // Filtered in the query rather than after the fact, so a blocked thread costs nothing to skip - no participant lookup, no message fetch, no unread count for a conversation that isn't going to be returned. loadMatchMembership rejects the same pair on the way in (server/authHelpers.js); this is what stops the thread appearing in the list to be opened at all.
+  const blockedIds = await blockedUserIds(db, req.user._id);
   const matches = await db
     .collection("matches")
-    .find({ $or: [{ userA: req.user._id }, { userB: req.user._id }] })
+    .find({
+      $or: [{ userA: req.user._id }, { userB: req.user._id }],
+      userA: { $nin: blockedIds },
+      userB: { $nin: blockedIds },
+    })
     .toArray();
 
   if (matches.length === 0) {

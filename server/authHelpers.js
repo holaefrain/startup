@@ -1,5 +1,6 @@
 const { ObjectId } = require("mongodb");
 const { getDb } = require("./dbClient");
+const { isBlockedPair } = require("./blocks");
 
 // The actual session lookup, independent of how the token was obtained - reused by getAuthenticatedUser below (req.cookies, the normal Express path) and server/websocket.js's upgrade handler, which has no req.cookies since cookie-parser never runs on a raw upgrade request.
 async function getUserByToken(token) {
@@ -24,7 +25,15 @@ async function loadMatchMembership(user, matchId) {
   const isMember = match.userA.equals(user._id) || match.userB.equals(user._id);
   if (!isMember) return { status: 403, error: "You are not part of this match." };
 
-  return { match, otherUserId: match.userA.equals(user._id) ? match.userB : match.userA };
+  const otherUserId = match.userA.equals(user._id) ? match.userB : match.userA;
+
+  // Every match-scoped route funnels through here - reading a thread, sending into it, marking it read, accepting a date, and GET /api/venues?scope=them - so one check closes all of them at once. Enforced at the membership layer rather than per route precisely because a route added later would otherwise have to remember to repeat it.
+  // Symmetric: it doesn't matter which side pressed block. The thread stops existing for both, which is also why GET /api/matches drops it from the list rather than showing a conversation that 403s when opened.
+  if (await isBlockedPair(db, user._id, otherUserId)) {
+    return { status: 403, error: "This conversation is no longer available." };
+  }
+
+  return { match, otherUserId };
 }
 
 // Middleware form, for routes whose whole purpose is scoped to one match - populates req.user/req.match/req.otherUserId the way server/chat.js's routes expect.
